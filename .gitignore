@@ -1,5 +1,6 @@
 # Build output (shadow build)
 build/
+build-pkg/
 deliverables/
 lib/
 plugins/

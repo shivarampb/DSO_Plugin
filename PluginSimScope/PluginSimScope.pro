@@ -5,6 +5,9 @@ QT -= gui
 TEMPLATE = lib
 CONFIG += plugin c++11
 
+# Export only the Qt plugin entry points (no internal symbol leakage).
+unix: QMAKE_CXXFLAGS += -fvisibility=hidden -fvisibility-inlines-hidden
+
 TARGET = PluginSimScope
 DESTDIR = ../plugins
 
