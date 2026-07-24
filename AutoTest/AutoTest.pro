@@ -13,7 +13,7 @@ DESTDIR   = ../bin
 
 INCLUDEPATH += ../include ../Common
 
-LIBS += -L../lib -lScopeCore
+LIBS += -L../lib -lScopeCore -lvisa
 
 SOURCES += \
     main.cpp

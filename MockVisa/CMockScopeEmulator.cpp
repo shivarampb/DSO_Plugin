@@ -1,0 +1,199 @@
+/*=============================================================================
+ *  CMockScopeEmulator.cpp - oscilloscope SCPI emulator for MockVisa.
+ *===========================================================================*/
+#include "CMockScopeEmulator.h"
+
+#include "S_ScopeLimits.h"
+
+#include <QStringList>
+#include <cmath>
+
+namespace {
+const double PI = 3.14159265358979323846;
+
+/* synthetic waveform constants (shared by the preamble and the data block) */
+const double WFM_XINC   = 1.0e-6;   /* s per point                          */
+const double WFM_YINC   = 1.0e-3;   /* V per code                           */
+const double WFM_AMPL_V = 0.4;      /* 0-peak amplitude in volts            */
+const double WFM_CYCLES = 3.0;      /* cycles across the record             */
+} // namespace
+
+CMockScopeEmulator::CMockScopeEmulator(const QString& in_strModelName)
+    : m_strModelName(in_strModelName)
+    , m_strManufacturer(QStringLiteral("Mock"))
+    , m_strIdnMatch(in_strModelName)
+    , m_iWfmPoints(1000)
+{
+    const S_ScopeLimits* p = ScopeFindLimits(in_strModelName.toLatin1().constData());
+    if (p != nullptr) {
+        m_strManufacturer = QString::fromLatin1(p->m_szManufacturer);
+        m_strIdnMatch     = QString::fromLatin1(p->m_szIdnMatch);
+    }
+}
+
+QByteArray CMockScopeEmulator::idnString() const
+{
+    // Use the exact IDN token the plugin verifies against as the model field.
+    return QStringLiteral("%1,%2,MOCK000001,1.0.0")
+            .arg(m_strManufacturer, m_strIdnMatch).toLatin1();
+}
+
+void CMockScopeEmulator::pushError(int in_iCode, const char* in_szMessage)
+{
+    m_lstErrors.append(qMakePair(in_iCode, QByteArray(in_szMessage)));
+}
+
+/*-----------------------------------------------------------------------------
+ * Build a binary waveform #-block (WORD, signed 16-bit, big-endian) of a
+ * 3-cycle sine, and the matching IVI-style preamble CSV.
+ *---------------------------------------------------------------------------*/
+QByteArray CMockScopeEmulator::buildWaveformBlock(int in_iPoints, QByteArray& out_abyPreambleCsv)
+{
+    const int n = (in_iPoints > 0) ? in_iPoints : 1000;
+    const double xOrigin = -(n / 2.0) * WFM_XINC;
+    const double codeAmpl = WFM_AMPL_V / WFM_YINC;   // 0.4 / 0.001 = 400 codes
+
+    // preamble CSV: format,type,points,count,xInc,xOrig,xRef,yInc,yOrig,yRef
+    out_abyPreambleCsv = QStringLiteral("1,0,%1,1,%2,%3,0,%4,0,0")
+            .arg(n)
+            .arg(WFM_XINC, 0, 'E', 6)
+            .arg(xOrigin, 0, 'E', 6)
+            .arg(WFM_YINC, 0, 'E', 6)
+            .toLatin1();
+
+    QByteArray payload;
+    payload.reserve(n * 2);
+    for (int i = 0; i < n; ++i) {
+        const double phase = WFM_CYCLES * static_cast<double>(i) / static_cast<double>(n);
+        const int code = static_cast<int>(std::lround(codeAmpl * std::sin(2.0 * PI * phase)));
+        const qint16 c16 = static_cast<qint16>(code);
+        payload.append(static_cast<char>((c16 >> 8) & 0xFF));   // MSB first
+        payload.append(static_cast<char>(c16 & 0xFF));
+    }
+
+    const QByteArray lenStr = QByteArray::number(payload.size());
+    QByteArray block;
+    block.append('#');
+    block.append(QByteArray::number(lenStr.size()));
+    block.append(lenStr);
+    block.append(payload);
+    block.append('\n');
+    return block;
+}
+
+QByteArray CMockScopeEmulator::buildScreenshotPng()
+{
+    // minimal valid 1x1 PNG
+    static const char* const kPngB64 =
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M8"
+        "AAAMBAQAY3Y2wAAAAAElFTkSuQmCC";
+    const QByteArray png = QByteArray::fromBase64(QByteArray(kPngB64));
+    const QByteArray lenStr = QByteArray::number(png.size());
+    QByteArray block;
+    block.append('#');
+    block.append(QByteArray::number(lenStr.size()));
+    block.append(lenStr);
+    block.append(png);
+    block.append('\n');
+    return block;
+}
+
+/*-----------------------------------------------------------------------------
+ * Handle one SCPI line.
+ *---------------------------------------------------------------------------*/
+void CMockScopeEmulator::HandleLine(const QByteArray& in_abyLine, QByteArray& out_abyResponse)
+{
+    const QByteArray line = in_abyLine.trimmed();
+    if (line.isEmpty()) return;
+
+    // split header / args on the first whitespace
+    int iSp = line.indexOf(' ');
+    const QByteArray headerRaw = (iSp < 0) ? line : line.left(iSp);
+    const QByteArray args      = (iSp < 0) ? QByteArray() : line.mid(iSp + 1).trimmed();
+    const QString header = QString::fromLatin1(headerRaw).toUpper();
+
+    auto isQuery = [&]() { return header.endsWith(QLatin1Char('?')); };
+
+    /*---- IEEE-488.2 common commands ------------------------------------*/
+    if (header == QLatin1String("*IDN?")) { out_abyResponse.append(idnString()).append('\n'); return; }
+    if (header == QLatin1String("*RST"))  { m_mapValues.clear(); m_lstErrors.clear(); m_iWfmPoints = 1000; return; }
+    if (header == QLatin1String("*CLS"))  { m_lstErrors.clear(); return; }
+    if (header == QLatin1String("*OPC?")) { out_abyResponse.append("1\n"); return; }
+    if (header == QLatin1String("*OPC"))  { return; }
+    if (header == QLatin1String("*ESR?")) { out_abyResponse.append("0\n"); return; }
+    if (header == QLatin1String("*STB?")) { out_abyResponse.append("0\n"); return; }
+    if (header == QLatin1String("*TST?")) { out_abyResponse.append("0\n"); return; }
+    if (header == QLatin1String("*OPT?")) { out_abyResponse.append("0\n"); return; }
+
+    /*---- SYST:ERR? queue -----------------------------------------------*/
+    if (header == QLatin1String("SYST:ERR?") || header == QLatin1String("SYSTEM:ERROR?")) {
+        if (m_lstErrors.isEmpty()) { out_abyResponse.append("0,\"No error\"\n"); }
+        else {
+            const QPair<int, QByteArray> e = m_lstErrors.takeFirst();
+            out_abyResponse.append(QByteArray::number(e.first)).append(",\"")
+                    .append(e.second).append("\"\n");
+        }
+        return;
+    }
+
+    /*---- waveform point count (affects the generated block) -------------*/
+    if (header.contains(QStringLiteral("POIN")) && !isQuery()) {
+        bool ok = false;
+        const int n = args.toInt(&ok);
+        if (ok && n > 0) m_iWfmPoints = n;
+        m_mapValues.insert(header, args);
+        return;
+    }
+
+    /*---- screenshot block (check before generic DATA? queries) ---------*/
+    if (isQuery() && (header.contains(QStringLiteral("HCOP")) ||
+                      header.contains(QStringLiteral("IMAG")) ||
+                      (header.contains(QStringLiteral("DISP")) && header.contains(QStringLiteral("DATA"))))) {
+        out_abyResponse.append(buildScreenshotPng());
+        return;
+    }
+    if (header.contains(QStringLiteral("HCOP")) && !isQuery()) {
+        // HARDCopy START style -> emit the image block
+        out_abyResponse.append(buildScreenshotPng());
+        return;
+    }
+
+    /*---- waveform preamble ---------------------------------------------*/
+    if (isQuery() && (header.contains(QStringLiteral("PRE")) &&
+                      (header.contains(QStringLiteral("WAV")) || header.contains(QStringLiteral("WFM"))))) {
+        QByteArray csv;
+        buildWaveformBlock(m_iWfmPoints, csv);
+        out_abyResponse.append(csv).append('\n');
+        return;
+    }
+    if (header == QLatin1String("WFMOUTPRE?") || header == QLatin1String("WFMPRE?")) {
+        QByteArray csv;
+        buildWaveformBlock(m_iWfmPoints, csv);
+        out_abyResponse.append(csv).append('\n');
+        return;
+    }
+
+    /*---- waveform data block -------------------------------------------*/
+    if (isQuery() && ((header.contains(QStringLiteral("WAV")) && header.contains(QStringLiteral("DATA"))) ||
+                      header == QLatin1String("CURVE?") || header == QLatin1String("CURV?"))) {
+        QByteArray csv;
+        out_abyResponse.append(buildWaveformBlock(m_iWfmPoints, csv));
+        return;
+    }
+
+    /*---- generic query / set store -------------------------------------*/
+    if (isQuery()) {
+        // strip trailing '?' to find the value stored by the matching setter
+        QString setHeader = header;
+        setHeader.chop(1);
+        if (m_mapValues.contains(setHeader)) {
+            out_abyResponse.append(m_mapValues.value(setHeader)).append('\n');
+        } else {
+            out_abyResponse.append("0\n");   // benign default
+        }
+        return;
+    }
+
+    // plain set command: remember the value for a later query
+    m_mapValues.insert(header, args);
+}

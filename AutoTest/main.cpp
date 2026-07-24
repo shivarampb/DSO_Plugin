@@ -12,11 +12,13 @@
 #include <QThread>
 #include <cmath>
 #include <cstdio>
+#include <cstring>
 #include <atomic>
 #include <thread>
 #include <vector>
 
 #include "ScopeManager.h"
+#include "visa.h"
 
 /*----------------------------------------------------------------------------
  * tiny test harness
@@ -228,6 +230,106 @@ static void testConcurrency(CScopeManager& mgr)
     mgr.destroyInstance(2);
 }
 
+/*----------------------------------------------------------------------------
+ * MockVisa direct-path test: exercise the VISA C ABI + emulator that the real
+ * model plugins depend on, without a plugin - IDN, binary waveform block
+ * round-trip, screenshot block, and the forced-timeout resource.
+ *--------------------------------------------------------------------------*/
+static void testMockVisa()
+{
+    section("MockVisa VISA-path (IDN, waveform block, screenshot, timeout)");
+    ViSession rm = 0;
+    checkTrue(viOpenDefaultRM(&rm) == VI_SUCCESS, QStringLiteral("viOpenDefaultRM"));
+
+    // find resources
+    ViFindList fl = 0; ViUInt32 cnt = 0; char desc[256];
+    checkTrue(viFindRsrc(rm, "?*INSTR", &fl, &cnt, desc) == VI_SUCCESS && cnt >= 2,
+              QStringLiteral("viFindRsrc lists mock resources"));
+
+    ViSession vi = 0;
+    checkTrue(viOpen(rm, "MOCK0::MDO34::INSTR", 0, 0, &vi) == VI_SUCCESS, QStringLiteral("viOpen MDO34"));
+    viSetAttribute(vi, VI_ATTR_TMO_VALUE, 2000);
+    viSetAttribute(vi, VI_ATTR_TERMCHAR, static_cast<ViAttrState>('\n'));
+    viSetAttribute(vi, VI_ATTR_TERMCHAR_EN, VI_TRUE);
+
+    // *IDN?
+    ViUInt32 nw = 0;
+    const char* idnCmd = "*IDN?\n";
+    viWrite(vi, reinterpret_cast<ViConstBuf>(idnCmd), 6, &nw);
+    char rd[512]; ViUInt32 got = 0;
+    ViStatus st = viRead(vi, reinterpret_cast<ViBuf>(rd), sizeof(rd), &got);
+    QByteArray idn(rd, static_cast<int>(got));
+    checkTrue(st >= VI_SUCCESS && idn.contains("MDO3"), QStringLiteral("mock *IDN? -> ") + QString::fromLatin1(idn.trimmed()));
+
+    // waveform points + preamble + binary block round-trip
+    const char* setPts = ":WAV:POIN 500\n";
+    viWrite(vi, reinterpret_cast<ViConstBuf>(setPts), static_cast<ViUInt32>(strlen(setPts)), &nw);
+    const char* preQ = ":WAV:PRE?\n";
+    viWrite(vi, reinterpret_cast<ViConstBuf>(preQ), static_cast<ViUInt32>(strlen(preQ)), &nw);
+    got = 0; st = viRead(vi, reinterpret_cast<ViBuf>(rd), sizeof(rd), &got);
+    QByteArray pre(rd, static_cast<int>(got));
+    const QList<QByteArray> preFields = pre.trimmed().split(',');
+    checkTrue(preFields.size() >= 10, QStringLiteral("preamble has 10 fields"));
+    const int nPoints = preFields.value(2).toInt();
+    checkTrue(nPoints == 500, QStringLiteral("preamble points reflects :WAV:POIN 500"));
+    const double yInc = preFields.value(7).toDouble();
+
+    // read the binary data block with termchar disabled
+    viSetAttribute(vi, VI_ATTR_TERMCHAR_EN, VI_FALSE);
+    const char* dataQ = ":WAV:DATA?\n";
+    viWrite(vi, reinterpret_cast<ViConstBuf>(dataQ), static_cast<ViUInt32>(strlen(dataQ)), &nw);
+    QByteArray block;
+    for (int i = 0; i < 64; ++i) {
+        got = 0;
+        st = viRead(vi, reinterpret_cast<ViBuf>(rd), sizeof(rd), &got);
+        block.append(rd, static_cast<int>(got));
+        if (st != VI_SUCCESS_MAX_CNT) break;
+    }
+    // parse #<w><len><payload>
+    bool blockOk = block.size() > 2 && block[0] == '#';
+    int payloadLen = 0, hdr = 0;
+    if (blockOk) {
+        const int w = block[1] - '0';
+        payloadLen = block.mid(2, w).toInt();
+        hdr = 2 + w;
+    }
+    checkTrue(blockOk && payloadLen == 2 * nPoints,
+              QStringLiteral("waveform block length = 2*points (%1)").arg(payloadLen));
+
+    // decode WORD big-endian codes -> volts, check amplitude ~ 0.4 Vpk
+    double vmax = -1e9, vmin = 1e9;
+    for (int i = 0; i < payloadLen && hdr + i + 1 < block.size(); i += 2) {
+        const qint16 code = static_cast<qint16>(
+            (static_cast<quint8>(block[hdr + i]) << 8) | static_cast<quint8>(block[hdr + i + 1]));
+        const double v = code * yInc;
+        vmax = std::max(vmax, v); vmin = std::min(vmin, v);
+    }
+    checkTrue(near(vmax, 0.4, 0.05, 0.0) && near(vmin, -0.4, 0.05, 0.0),
+              QStringLiteral("decoded sine amplitude ~= +/-0.4 V (got %1/%2)").arg(vmax).arg(vmin));
+
+    // screenshot block (PNG signature)
+    viSetAttribute(vi, VI_ATTR_TERMCHAR_EN, VI_FALSE);
+    const char* shotQ = ":DISP:DATA?\n";
+    viWrite(vi, reinterpret_cast<ViConstBuf>(shotQ), static_cast<ViUInt32>(strlen(shotQ)), &nw);
+    QByteArray shot;
+    for (int i = 0; i < 8; ++i) {
+        got = 0; st = viRead(vi, reinterpret_cast<ViBuf>(rd), sizeof(rd), &got);
+        shot.append(rd, static_cast<int>(got));
+        if (st != VI_SUCCESS_MAX_CNT) break;
+    }
+    checkTrue(shot.contains("\x89PNG"), QStringLiteral("screenshot block carries a PNG"));
+    viClose(vi);
+
+    // forced-timeout resource never answers a read
+    ViSession viT = 0;
+    checkTrue(viOpen(rm, "MOCK0::TIMEOUT::INSTR", 0, 0, &viT) == VI_SUCCESS, QStringLiteral("viOpen TIMEOUT"));
+    viWrite(viT, reinterpret_cast<ViConstBuf>(idnCmd), 6, &nw);
+    got = 0; st = viRead(viT, reinterpret_cast<ViBuf>(rd), sizeof(rd), &got);
+    checkTrue(st == VI_ERROR_TMO, QStringLiteral("timeout resource returns VI_ERROR_TMO"));
+    viClose(viT);
+    viClose(rm);
+}
+
 int main(int argc, char** argv)
 {
     QCoreApplication app(argc, argv);
@@ -242,6 +344,7 @@ int main(int argc, char** argv)
 
     testDiscovery(mgr);
     testInstances(mgr);
+    testMockVisa();
     testSimApi(mgr);
     testRangeMatrix(mgr);
     testErrorPaths(mgr);
