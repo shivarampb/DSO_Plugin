@@ -330,6 +330,72 @@ static void testMockVisa()
     viClose(rm);
 }
 
+/*----------------------------------------------------------------------------
+ * Real model plugins (MDO34, RTM3004) end-to-end via MockVisa, including the
+ * binary waveform round-trip (preamble + block -> scaled volts).
+ *--------------------------------------------------------------------------*/
+static void testRealModel(CScopeManager& mgr, const QString& model, const QString& resource)
+{
+    section(QStringLiteral("Real model %1 via MockVisa").arg(model).toLatin1().constData());
+    if (!mgr.getAvailablePlugins().contains(model)) {
+        std::printf("  [SKIP] %s plugin not discovered\n", model.toLatin1().constData());
+        return;
+    }
+    const U32BIT scope = 10;
+    checkOk(mgr.createInstance(scope, model), QStringLiteral("createInstance %1").arg(model));
+    S_Scope_ConnectionConfig cfg; cfg.setResourceString(resource);
+    checkOk(mgr.connect(scope, cfg), QStringLiteral("connect %1").arg(resource));
+    checkTrue(mgr.isConnected(scope), QStringLiteral("isConnected"));
+
+    QString idn;
+    checkOk(mgr.getIdentification(scope, idn), QStringLiteral("getIdentification"));
+
+    checkOk(mgr.reset(scope), QStringLiteral("reset (*RST)"));
+    checkOk(mgr.enableChannel(scope, 1, true), QStringLiteral("enableChannel 1"));
+    checkOk(mgr.setVerticalScale(scope, 1, 0.2), QStringLiteral("setVerticalScale"));
+    FDOUBLE vs = 0.0;
+    checkOk(mgr.getVerticalScale(scope, 1, vs), QStringLiteral("getVerticalScale"));
+    checkTrue(near(vs, 0.2, 0, 1e-9), QStringLiteral("vertical scale round-trips through SCPI"));
+    checkCode(mgr.setVerticalScale(scope, 1, 1.0e6), Enum_Scope_ErrorCode::PARAMETER_OUT_OF_RANGE,
+              QStringLiteral("out-of-range vertical scale rejected locally"));
+
+    checkOk(mgr.setTimebaseScale(scope, 1.0e-6), QStringLiteral("setTimebaseScale"));
+    checkOk(mgr.setTriggerSource(scope, Enum_Scope_TriggerSource::m_enumCh1), QStringLiteral("setTriggerSource"));
+    checkOk(mgr.setTriggerSlope(scope, Enum_Scope_TriggerSlope::m_enumRising), QStringLiteral("setTriggerSlope"));
+    checkOk(mgr.setTriggerLevel(scope, 1, 0.1), QStringLiteral("setTriggerLevel"));
+    checkOk(mgr.setAcqMode(scope, Enum_Scope_AcqMode::m_enumSample), QStringLiteral("setAcqMode"));
+    checkOk(mgr.single(scope), QStringLiteral("single"));
+
+    // waveform point count control + binary round-trip
+    checkOk(mgr.setWaveformPoints(scope, 500), QStringLiteral("setWaveformPoints 500"));
+    S_Scope_Waveform wfm;
+    checkOk(mgr.readWaveform(scope, 1, wfm), QStringLiteral("readWaveform"));
+    checkTrue(wfm.pointCount() == 500, QStringLiteral("waveform reflects 500 points (got %1)").arg(wfm.pointCount()));
+    double vmax = -1e9, vmin = 1e9;
+    for (double v : wfm.m_vecVolts) { vmax = std::max(vmax, v); vmin = std::min(vmin, v); }
+    // mock synth sine is 0.4 Vpk (Vpp 0.8), independent of V/div
+    checkTrue(near(vmax - vmin, 0.8, 0.05, 0.0), QStringLiteral("decoded Vpp ~= 0.8 V (got %1)").arg(vmax - vmin));
+    checkTrue(wfm.m_sPreamble.m_dXIncrement > 0.0, QStringLiteral("preamble xIncrement > 0"));
+
+    // status + screenshot
+    S_Scope_DeviceErrorStatus stx;
+    checkOk(mgr.readErrorStatus(scope, 1, stx), QStringLiteral("readErrorStatus"));
+    QByteArray png;
+    ScopeError shot = mgr.captureScreenshot(scope, Enum_Scope_ImageFormat::m_enumPng, png);
+    // captureScreenshot is not in the M4 override set for these models -> NOT_SUPPORTED is acceptable
+    checkTrue(shot.isSuccess() || shot.code() == Enum_Scope_ErrorCode::NOT_SUPPORTED,
+              QStringLiteral("captureScreenshot ok or NOT_SUPPORTED"));
+
+    checkOk(mgr.disconnect(scope), QStringLiteral("disconnect"));
+    checkOk(mgr.destroyInstance(scope), QStringLiteral("destroyInstance"));
+}
+
+static void testRealModels(CScopeManager& mgr)
+{
+    testRealModel(mgr, QStringLiteral("MDO34"), QStringLiteral("MOCK0::MDO34::INSTR"));
+    testRealModel(mgr, QStringLiteral("RTM3004"), QStringLiteral("MOCK0::RTM3004::INSTR"));
+}
+
 int main(int argc, char** argv)
 {
     QCoreApplication app(argc, argv);
@@ -345,6 +411,7 @@ int main(int argc, char** argv)
     testDiscovery(mgr);
     testInstances(mgr);
     testMockVisa();
+    testRealModels(mgr);
     testSimApi(mgr);
     testRangeMatrix(mgr);
     testErrorPaths(mgr);

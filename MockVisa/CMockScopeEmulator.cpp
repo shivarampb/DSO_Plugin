@@ -136,8 +136,10 @@ void CMockScopeEmulator::HandleLine(const QByteArray& in_abyLine, QByteArray& ou
         return;
     }
 
-    /*---- waveform point count (affects the generated block) -------------*/
-    if (header.contains(QStringLiteral("POIN")) && !isQuery()) {
+    /*---- waveform point count (affects the generated block) -------------
+     *  IVI/R&S :WAV:POIN / ACQ:POIN, and Tektronix DATa:STOP.              */
+    if (!isQuery() && (header.contains(QStringLiteral("POIN")) ||
+                       (header.contains(QStringLiteral("DATA")) && header.contains(QStringLiteral("STOP"))))) {
         bool ok = false;
         const int n = args.toInt(&ok);
         if (ok && n > 0) m_iWfmPoints = n;
@@ -158,24 +160,23 @@ void CMockScopeEmulator::HandleLine(const QByteArray& in_abyLine, QByteArray& ou
         return;
     }
 
-    /*---- waveform preamble ---------------------------------------------*/
-    if (isQuery() && (header.contains(QStringLiteral("PRE")) &&
-                      (header.contains(QStringLiteral("WAV")) || header.contains(QStringLiteral("WFM"))))) {
-        QByteArray csv;
-        buildWaveformBlock(m_iWfmPoints, csv);
-        out_abyResponse.append(csv).append('\n');
-        return;
-    }
-    if (header == QLatin1String("WFMOUTPRE?") || header == QLatin1String("WFMPRE?")) {
+    /*---- waveform preamble (Tek WFMOutpre? / IVI :WAV:PRE? / R&S :DATA:HEAD?)
+     *     checked before the data block: an R&S header query contains DATA
+     *     too, but is distinguished by the PRE/HEAD token.                  */
+    if (isQuery() && (header.contains(QStringLiteral("PRE")) || header.contains(QStringLiteral("HEAD"))) &&
+        (header.contains(QStringLiteral("WAV")) || header.contains(QStringLiteral("WFM")) ||
+         header.contains(QStringLiteral("CHAN")) || header.contains(QStringLiteral("CURV")) ||
+         header.contains(QStringLiteral("DATA")))) {
         QByteArray csv;
         buildWaveformBlock(m_iWfmPoints, csv);
         out_abyResponse.append(csv).append('\n');
         return;
     }
 
-    /*---- waveform data block -------------------------------------------*/
-    if (isQuery() && ((header.contains(QStringLiteral("WAV")) && header.contains(QStringLiteral("DATA"))) ||
-                      header == QLatin1String("CURVE?") || header == QLatin1String("CURV?"))) {
+    /*---- waveform data block (Tek CURVe? / IVI :WAV:DATA? / R&S CHAN:DATA?) */
+    if (isQuery() && (header == QLatin1String("CURVE?") || header == QLatin1String("CURV?") ||
+                      (header.contains(QStringLiteral("DATA")) &&
+                       (header.contains(QStringLiteral("WAV")) || header.contains(QStringLiteral("CHAN")))))) {
         QByteArray csv;
         out_abyResponse.append(buildWaveformBlock(m_iWfmPoints, csv));
         return;

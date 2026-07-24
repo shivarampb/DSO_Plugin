@@ -18,12 +18,12 @@ SUBDIRS += \
     PluginMDO34 \
     PluginRTM3004 \
     PluginSimScope \
-    AutoTest \
-    GuiTester
+    AutoTest
+
+# GuiTester is added at milestone M8.
 
 MockVisa.depends        = ScopeCore
 PluginMDO34.depends     = ScopeCore MockVisa
 PluginRTM3004.depends   = ScopeCore MockVisa
 PluginSimScope.depends  = ScopeCore
-AutoTest.depends        = ScopeCore
-GuiTester.depends       = ScopeCore
+AutoTest.depends        = ScopeCore MockVisa PluginMDO34 PluginRTM3004 PluginSimScope
