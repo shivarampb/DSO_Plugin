@@ -15,8 +15,11 @@ unverified constants with `// TODO(manual): ...`.
 
 Two places use the model's limits:
 
-- **The plugin embeds its own row** in its constructor (initializer list), so it
-  is self-contained.
+- **The plugin embeds its own row** so it is self-contained. The two ★ models
+  (MDO34, RTM3004) embed a literal initializer-list row; the fan-out models copy
+  their row from the catalog into their own `m_limits` in the constructor
+  (`const S_ScopeLimits* p = ScopeFindLimits("<Model>"); if (p) m_limits = *p;`).
+  Either way the plugin owns its row and depends on no shared base class.
 - **The catalog** in `Common/S_ScopeLimits.h` (`ScopeLimitsCatalog`) — add a row
   so `SimScope` can simulate the model and `getParameterRange` matches the real
   plugin by construction.

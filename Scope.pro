@@ -17,13 +17,29 @@ SUBDIRS += \
     MockVisa \
     PluginMDO34 \
     PluginRTM3004 \
+    PluginDSO7104B \
+    PluginDSOS204A \
+    PluginDSOX2012A \
+    PluginMSO6054A \
+    PluginRTO2064 \
+    PluginTDS1012B \
+    PluginTDS2024C \
+    PluginWaveSurfer42Xs \
     PluginSimScope \
     AutoTest \
     GuiTester
 
-MockVisa.depends        = ScopeCore
-PluginMDO34.depends     = ScopeCore MockVisa
-PluginRTM3004.depends   = ScopeCore MockVisa
-PluginSimScope.depends  = ScopeCore
-AutoTest.depends        = ScopeCore MockVisa PluginMDO34 PluginRTM3004 PluginSimScope
-GuiTester.depends       = ScopeCore
+MockVisa.depends             = ScopeCore
+PluginMDO34.depends          = ScopeCore MockVisa
+PluginRTM3004.depends        = ScopeCore MockVisa
+PluginDSO7104B.depends       = ScopeCore MockVisa
+PluginDSOS204A.depends       = ScopeCore MockVisa
+PluginDSOX2012A.depends      = ScopeCore MockVisa
+PluginMSO6054A.depends       = ScopeCore MockVisa
+PluginRTO2064.depends        = ScopeCore MockVisa
+PluginTDS1012B.depends       = ScopeCore MockVisa
+PluginTDS2024C.depends       = ScopeCore MockVisa
+PluginWaveSurfer42Xs.depends = ScopeCore MockVisa
+PluginSimScope.depends       = ScopeCore
+AutoTest.depends             = ScopeCore MockVisa PluginMDO34 PluginRTM3004 PluginSimScope
+GuiTester.depends            = ScopeCore

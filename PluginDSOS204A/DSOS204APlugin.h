@@ -1,0 +1,142 @@
+/*============================================================================
+ *  DSOS204APlugin.h
+ *
+ *  Keysight (Agilent) InfiniiVision 2000 X-Series oscilloscope plugin - a
+ *  complete, self-contained CIScopePlugin (SCPI over VISA, direct linkage).
+ *  The model's limits are copied into the embedded m_limits from the catalog
+ *  at construction, so the plugin owns its own row and carries no shared base.
+ *
+ *  Dialect: Keysight InfiniiVision Programmer's Guide (:CHANnel<n>:...,
+ *  :TIMebase:..., :TRIGger:EDGE:..., :ACQuire:..., :WAVeform:...). Commands are
+ *  exercised against the mock emulator; ranges/commands tagged TODO(manual)
+ *  until the Programmer's Guide is placed under manuals/DSOS204A/.
+ *
+ *  \author  Scope framework
+ *==========================================================================*/
+#ifndef DSOS204APLUGIN_H
+#define DSOS204APLUGIN_H
+
+#include <QObject>
+#include <QMap>
+
+#include "visa.h"
+#include "IScopePlugin.h"
+#include "S_ScopeLimits.h"
+
+class CDSOS204APlugin : public QObject, public CIScopePlugin
+{
+    Q_OBJECT
+    Q_PLUGIN_METADATA(IID ScopePlugin_iid)
+    Q_INTERFACES(CIScopePlugin)
+public:
+    CDSOS204APlugin();
+    ~CDSOS204APlugin() override;
+
+    S_Scope_PluginInfo   getPluginInfo() const override;
+    S_Scope_Capabilities getCapabilities() const override;
+    ScopeError connect(U32BIT s, const S_Scope_ConnectionConfig& c) override;
+    ScopeError disconnect(U32BIT s) override;
+    bool       isConnected(U32BIT s) const override;
+    ScopeError reset(U32BIT s) override;
+
+    ScopeError setTimeout(U32BIT s, U32BIT t) override;
+    ScopeError clearStatus(U32BIT s) override;
+    ScopeError getIdentification(U32BIT s, QString& o) override;
+    ScopeError selfTest(U32BIT s, S32BIT& o) override;
+    ScopeError getOptions(U32BIT s, QString& o) override;
+    ScopeError waitOperationComplete(U32BIT s) override;
+    ScopeError getScpiVersion(U32BIT s, QString& o) override;
+    ScopeError getParameterRange(U32BIT s, U32BIT c, Enum_Scope_ParamId p, S_Scope_ParameterRange& o) override;
+    ScopeError autoscale(U32BIT s) override;
+    ScopeError run(U32BIT s) override;
+    ScopeError stop(U32BIT s) override;
+    ScopeError single(U32BIT s) override;
+    ScopeError forceTrigger(U32BIT s) override;
+
+    ScopeError enableChannel(U32BIT s, U32BIT c, bool v) override;
+    ScopeError isChannelEnabled(U32BIT s, U32BIT c, bool& o) override;
+    ScopeError setVerticalScale(U32BIT s, U32BIT c, FDOUBLE v) override;
+    ScopeError getVerticalScale(U32BIT s, U32BIT c, FDOUBLE& o) override;
+    ScopeError setVerticalOffset(U32BIT s, U32BIT c, FDOUBLE v) override;
+    ScopeError getVerticalOffset(U32BIT s, U32BIT c, FDOUBLE& o) override;
+    ScopeError setCoupling(U32BIT s, U32BIT c, Enum_Scope_Coupling v) override;
+    ScopeError getCoupling(U32BIT s, U32BIT c, Enum_Scope_Coupling& o) override;
+    ScopeError setProbeAttenuation(U32BIT s, U32BIT c, FDOUBLE v) override;
+    ScopeError getProbeAttenuation(U32BIT s, U32BIT c, FDOUBLE& o) override;
+
+    ScopeError setTimebaseScale(U32BIT s, FDOUBLE v) override;
+    ScopeError getTimebaseScale(U32BIT s, FDOUBLE& o) override;
+    ScopeError setTimebasePosition(U32BIT s, FDOUBLE v) override;
+    ScopeError getTimebasePosition(U32BIT s, FDOUBLE& o) override;
+    ScopeError getSampleRate(U32BIT s, FDOUBLE& o) override;
+    ScopeError setMemoryDepth(U32BIT s, U32BIT v) override;
+    ScopeError getMemoryDepth(U32BIT s, U32BIT& o) override;
+
+    ScopeError setTriggerMode(U32BIT s, Enum_Scope_TriggerMode v) override;
+    ScopeError getTriggerMode(U32BIT s, Enum_Scope_TriggerMode& o) override;
+    ScopeError setTriggerSource(U32BIT s, Enum_Scope_TriggerSource v) override;
+    ScopeError getTriggerSource(U32BIT s, Enum_Scope_TriggerSource& o) override;
+    ScopeError setTriggerSlope(U32BIT s, Enum_Scope_TriggerSlope v) override;
+    ScopeError getTriggerSlope(U32BIT s, Enum_Scope_TriggerSlope& o) override;
+    ScopeError setTriggerLevel(U32BIT s, U32BIT c, FDOUBLE v) override;
+    ScopeError getTriggerLevel(U32BIT s, U32BIT c, FDOUBLE& o) override;
+    ScopeError setTriggerHoldoff(U32BIT s, FDOUBLE v) override;
+    ScopeError getTriggerHoldoff(U32BIT s, FDOUBLE& o) override;
+    ScopeError getTriggerState(U32BIT s, Enum_Scope_TriggerState& o) override;
+
+    ScopeError setAcqMode(U32BIT s, Enum_Scope_AcqMode v) override;
+    ScopeError getAcqMode(U32BIT s, Enum_Scope_AcqMode& o) override;
+    ScopeError setAverageCount(U32BIT s, U32BIT v) override;
+    ScopeError getAverageCount(U32BIT s, U32BIT& o) override;
+    ScopeError getAcquisitionState(U32BIT s, Enum_Scope_AcqState& o) override;
+
+    ScopeError setWaveformSource(U32BIT s, Enum_Scope_WaveformSource v, U32BIT i) override;
+    ScopeError setWaveformFormat(U32BIT s, Enum_Scope_WaveformFormat v) override;
+    ScopeError setWaveformPoints(U32BIT s, U32BIT v) override;
+    ScopeError getWaveformPreamble(U32BIT s, U32BIT c, S_Scope_WaveformPreamble& o) override;
+    ScopeError readWaveform(U32BIT s, U32BIT c, S_Scope_Waveform& o) override;
+    ScopeError digitizeChannel(U32BIT s, U32BIT c) override;
+
+    ScopeError captureScreenshot(U32BIT s, Enum_Scope_ImageFormat f, QByteArray& o) override;
+    ScopeError readErrorStatus(U32BIT s, U32BIT c, S_Scope_DeviceErrorStatus& o) override;
+    ScopeError clearErrorStatus(U32BIT s, U32BIT c) override;
+    ScopeError queryErrorQueue(U32BIT s, QString& o) override;
+    ScopeError readStatusByte(U32BIT s, U32BIT& o) override;
+    ScopeError readStandardEventStatus(U32BIT s, U32BIT& o) override;
+    ScopeError writeScpi(U32BIT s, const QString& v) override;
+    ScopeError queryScpi(U32BIT s, const QString& v, QString& o) override;
+
+private:
+    struct S_DeviceInstance {
+        ViSession m_vi;
+        ViSession m_rm;
+        S_Scope_ConnectionConfig m_sConfig;
+        bool      m_bConnected;
+        bool      m_bRunning;
+        U32BIT    m_u32Timeout;
+        QString   m_strIdn;
+        S_DeviceInstance() : m_vi(VI_NULL), m_rm(VI_NULL), m_bConnected(false)
+            , m_bRunning(false), m_u32Timeout(5000) {}
+    };
+
+    S_DeviceInstance* dev(U32BIT s);
+    bool validChannel(U32BIT c) const;
+
+    ScopeError visaError(ViStatus st, const QString& ctx);
+    ScopeError writeLine(U32BIT s, const QByteArray& cmd);
+    ScopeError readLine(U32BIT s, QByteArray& resp);
+    ScopeError queryLine(U32BIT s, const QByteArray& cmd, QByteArray& resp);
+    ScopeError readBinaryBlock(U32BIT s, QByteArray& payload);
+    ScopeError sendChecked(U32BIT s, const QByteArray& cmd);
+    ScopeError queryDouble(U32BIT s, const QByteArray& cmd, FDOUBLE& o);
+    ScopeError setDouble(U32BIT s, const char* scpi, FDOUBLE v, FDOUBLE lo, FDOUBLE hi, const char* what);
+    static QByteArray fmtD(FDOUBLE v);
+    static int chanOf(Enum_Scope_TriggerSource e);
+
+    S_ScopeLimits        m_limits;
+    const S_ScopeLimits* m_pLimits;
+    QString              m_strModel;
+    QMap<U32BIT, S_DeviceInstance> m_devices;
+};
+
+#endif // DSOS204APLUGIN_H

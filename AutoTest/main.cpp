@@ -334,7 +334,8 @@ static void testMockVisa()
  * Real model plugins (MDO34, RTM3004) end-to-end via MockVisa, including the
  * binary waveform round-trip (preamble + block -> scaled volts).
  *--------------------------------------------------------------------------*/
-static void testRealModel(CScopeManager& mgr, const QString& model, const QString& resource)
+static void testRealModel(CScopeManager& mgr, const QString& model, const QString& resource,
+                          int analogChannels)
 {
     section(QStringLiteral("Real model %1 via MockVisa").arg(model).toLatin1().constData());
     if (!mgr.getAvailablePlugins().contains(model)) {
@@ -352,6 +353,12 @@ static void testRealModel(CScopeManager& mgr, const QString& model, const QStrin
 
     checkOk(mgr.reset(scope), QStringLiteral("reset (*RST)"));
     checkOk(mgr.enableChannel(scope, 1, true), QStringLiteral("enableChannel 1"));
+    // channel-count matrix: a channel beyond this model's count is rejected
+    if (analogChannels < 4)
+        checkCode(mgr.enableChannel(scope, 4, true), Enum_Scope_ErrorCode::INVALID_CHANNEL,
+                  QStringLiteral("%1 (%2ch) rejects ch4").arg(model).arg(analogChannels));
+    else
+        checkOk(mgr.enableChannel(scope, 4, true), QStringLiteral("%1 accepts ch4").arg(model));
     checkOk(mgr.setVerticalScale(scope, 1, 0.2), QStringLiteral("setVerticalScale"));
     FDOUBLE vs = 0.0;
     checkOk(mgr.getVerticalScale(scope, 1, vs), QStringLiteral("getVerticalScale"));
@@ -392,8 +399,17 @@ static void testRealModel(CScopeManager& mgr, const QString& model, const QStrin
 
 static void testRealModels(CScopeManager& mgr)
 {
-    testRealModel(mgr, QStringLiteral("MDO34"), QStringLiteral("MOCK0::MDO34::INSTR"));
-    testRealModel(mgr, QStringLiteral("RTM3004"), QStringLiteral("MOCK0::RTM3004::INSTR"));
+    // model, analog channel count (drives the channel-count matrix check)
+    struct Row { const char* model; int ch; };
+    static const Row rows[] = {
+        { "MDO34", 4 }, { "RTM3004", 4 }, { "DSO7104B", 4 }, { "DSOS204A", 4 },
+        { "DSOX2012A", 2 }, { "MSO6054A", 4 }, { "RTO2064", 4 },
+        { "TDS1012B", 2 }, { "TDS2024C", 4 }, { "WaveSurfer42Xs", 4 },
+    };
+    for (const Row& r : rows) {
+        const QString model = QString::fromLatin1(r.model);
+        testRealModel(mgr, model, QStringLiteral("MOCK0::%1::INSTR").arg(model), r.ch);
+    }
 }
 
 int main(int argc, char** argv)
