@@ -23,6 +23,7 @@ CMockScopeEmulator::CMockScopeEmulator(const QString& in_strModelName)
     , m_strManufacturer(QStringLiteral("Mock"))
     , m_strIdnMatch(in_strModelName)
     , m_iWfmPoints(1000)
+    , m_strMeasType(QStringLiteral("FREQ"))
 {
     const S_ScopeLimits* p = ScopeFindLimits(in_strModelName.toLatin1().constData());
     if (p != nullptr) {
@@ -41,6 +42,31 @@ QByteArray CMockScopeEmulator::idnString() const
 void CMockScopeEmulator::pushError(int in_iCode, const char* in_szMessage)
 {
     m_lstErrors.append(qMakePair(in_iCode, QByteArray(in_szMessage)));
+}
+
+/* Automatic-measurement values derived from the same 3-cycle, 0.4 Vpk sine the
+ * waveform block encodes, so measured values are self-consistent with the trace. */
+double CMockScopeEmulator::measurementValue(const QString& in_strType) const
+{
+    const int n = (m_iWfmPoints > 0) ? m_iWfmPoints : 1000;
+    const double totalTime = n * WFM_XINC;
+    const double freq = (totalTime > 0.0) ? (WFM_CYCLES / totalTime) : 0.0;
+    const double period = (freq > 0.0) ? 1.0 / freq : 0.0;
+    const QString t = in_strType.toUpper();
+    auto has = [&](const char* k) { return t.contains(QLatin1String(k)); };
+    // order matters: max/min (incl. R&S UPEak/LPEak) before the generic PEAK->Vpp
+    if (has("VMAX") || has("MAX") || has("UPE") || has("HIGH") || has("TOP"))  return WFM_AMPL_V;
+    if (has("VMIN") || has("MIN") || has("LPE") || has("LOW") || has("BASE"))  return -WFM_AMPL_V;
+    if (has("RMS"))                                                            return WFM_AMPL_V / 1.4142135623730951;
+    if (has("VPP") || has("PK2") || has("PEAK") || has("AMPL"))                return 2.0 * WFM_AMPL_V;   // 0.8
+    if (has("MEAN") || has("VAV") || has("AVG"))                               return 0.0;
+    if (has("FREQ"))                                                           return freq;
+    if (has("PER"))                                                            return period;
+    if (has("RIS") || has("RTIM") || has("FALL") || has("FTIM"))              return period * 0.1;
+    if (has("WID") || has("PPW") || has("NPW"))                               return period * 0.5;
+    if (has("DUT") || has("DCYC"))                                            return 50.0;
+    if (has("PHAS") || has("DEL"))                                            return 0.0;
+    return freq;   // default
 }
 
 /*-----------------------------------------------------------------------------
@@ -154,8 +180,8 @@ void CMockScopeEmulator::HandleLine(const QByteArray& in_abyLine, QByteArray& ou
         out_abyResponse.append(buildScreenshotPng());
         return;
     }
-    if (header.contains(QStringLiteral("HCOP")) && !isQuery()) {
-        // HARDCopy START style -> emit the image block
+    if ((header.contains(QStringLiteral("HCOP")) || header.contains(QStringLiteral("HARDC"))) && !isQuery()) {
+        // Tektronix HARDCopy STARt style -> emit the image block
         out_abyResponse.append(buildScreenshotPng());
         return;
     }
@@ -182,13 +208,40 @@ void CMockScopeEmulator::HandleLine(const QByteArray& in_abyLine, QByteArray& ou
         return;
     }
 
+    /*---- automatic measurements ----------------------------------------
+     *  A set command carrying the measurement type (Tek MEASUrement:IMMed:TYPe,
+     *  R&S MEASurement:MAIN) stores it; a MEAS query returns a computed value,
+     *  using the type in the header if present else the stored type.        */
+    if (header.contains(QStringLiteral("MEAS")) && !isQuery() && !args.isEmpty() &&
+        (header.contains(QStringLiteral("TYPE")) || header.contains(QStringLiteral("MAIN")))) {
+        m_strMeasType = QString::fromLatin1(args).toUpper();
+        m_mapValues.insert(header, args);
+        return;
+    }
+    if (header.contains(QStringLiteral("MEAS")) && isQuery()) {
+        // does the header itself name a measurement type?
+        static const char* kTypes[] = { "VPP","VMAX","VMIN","VRMS","MEAN","VAV","FREQ",
+                                        "PER","RIS","FALL","WID","DUT","PHAS","DEL","AMPL","TOP","BASE" };
+        QString type = m_strMeasType;
+        for (const char* k : kTypes) {
+            if (header.contains(QLatin1String(k))) { type = QLatin1String(k); break; }
+        }
+        out_abyResponse.append(QByteArray::number(measurementValue(type), 'E', 6)).append('\n');
+        return;
+    }
+
     /*---- generic query / set store -------------------------------------*/
     if (isQuery()) {
         // strip trailing '?' to find the value stored by the matching setter
         QString setHeader = header;
         setHeader.chop(1);
         if (m_mapValues.contains(setHeader)) {
-            out_abyResponse.append(m_mapValues.value(setHeader)).append('\n');
+            const QByteArray val = m_mapValues.value(setHeader);
+            const QString up = QString::fromLatin1(val).trimmed().toUpper();
+            // normalise boolean keywords so numeric getters (e.g. isKeyLocked) parse
+            if (up == QLatin1String("ON") || up == QLatin1String("1"))       out_abyResponse.append("1\n");
+            else if (up == QLatin1String("OFF") || up == QLatin1String("0")) out_abyResponse.append("0\n");
+            else out_abyResponse.append(val).append('\n');
         } else {
             out_abyResponse.append("0\n");   // benign default
         }

@@ -764,3 +764,236 @@ ScopeError CRTM3004Plugin::queryScpi(U32BIT s, const QString& v, QString& o)
     if (e.isSuccess()) o = QString::fromLatin1(r).trimmed();
     return e;
 }
+
+/*============================================================================
+ *  M5 feature slices - R&S dialect.
+ *==========================================================================*/
+namespace {
+const char* rtmMeasTok(Enum_Scope_MeasType t)
+{
+    switch (t) {
+    case Enum_Scope_MeasType::m_enumVpp:       return "PEAK";
+    case Enum_Scope_MeasType::m_enumVmax:      return "UPEakvalue";
+    case Enum_Scope_MeasType::m_enumVmin:      return "LPEakvalue";
+    case Enum_Scope_MeasType::m_enumVrms:      return "RMS";
+    case Enum_Scope_MeasType::m_enumVavg:      return "MEAN";
+    case Enum_Scope_MeasType::m_enumFrequency: return "FREQuency";
+    case Enum_Scope_MeasType::m_enumPeriod:    return "PERiod";
+    case Enum_Scope_MeasType::m_enumRiseTime:  return "RTIMe";
+    case Enum_Scope_MeasType::m_enumFallTime:  return "FTIMe";
+    case Enum_Scope_MeasType::m_enumPosWidth:  return "PPWidth";
+    case Enum_Scope_MeasType::m_enumNegWidth:  return "NPWidth";
+    case Enum_Scope_MeasType::m_enumDutyCycle: return "PDCYcle";
+    case Enum_Scope_MeasType::m_enumPhase:     return "PHASe";
+    case Enum_Scope_MeasType::m_enumDelay:     return "DELay";
+    default:                                   return "FREQuency";
+    }
+}
+QString rtmMeasUnits(Enum_Scope_MeasType t)
+{
+    switch (t) {
+    case Enum_Scope_MeasType::m_enumFrequency: return QStringLiteral("Hz");
+    case Enum_Scope_MeasType::m_enumPeriod:
+    case Enum_Scope_MeasType::m_enumRiseTime:
+    case Enum_Scope_MeasType::m_enumFallTime:
+    case Enum_Scope_MeasType::m_enumPosWidth:
+    case Enum_Scope_MeasType::m_enumNegWidth:  return QStringLiteral("s");
+    case Enum_Scope_MeasType::m_enumDutyCycle: return QStringLiteral("%");
+    case Enum_Scope_MeasType::m_enumPhase:     return QStringLiteral("deg");
+    default:                                   return QStringLiteral("V");
+    }
+}
+} // namespace
+
+ScopeError CRTM3004Plugin::addMeasurement(U32BIT s, U32BIT c, Enum_Scope_MeasType t)
+{
+    if (!validChannel(c)) return ScopeError(Enum_Scope_ErrorCode::INVALID_CHANNEL);
+    ScopeError e = sendChecked(s, QByteArray("MEASurement1:SOURce CH") + QByteArray::number(c));
+    if (!e.isSuccess()) return e;
+    return sendChecked(s, QByteArray("MEASurement1:MAIN ") + rtmMeasTok(t));
+}
+ScopeError CRTM3004Plugin::readMeasurement(U32BIT s, U32BIT c, Enum_Scope_MeasType t, S_Scope_MeasurementResult& o)
+{
+    ScopeError e = addMeasurement(s, c, t);
+    if (!e.isSuccess()) return e;
+    FDOUBLE v = 0.0;
+    e = queryDouble(s, QByteArrayLiteral("MEASurement1:RESult?"), v);
+    if (!e.isSuccess()) return e;
+    o.m_eType = t; o.m_dValue = v; o.m_bValid = true; o.m_strUnits = rtmMeasUnits(t);
+    o.m_dMean = v; o.m_dMin = v; o.m_dMax = v; o.m_dStdDev = 0.0;
+    return ScopeError();
+}
+ScopeError CRTM3004Plugin::clearMeasurements(U32BIT s) { return writeLine(s, QByteArrayLiteral("MEASurement1:AOFF")); }
+ScopeError CRTM3004Plugin::setMeasureStatistics(U32BIT s, bool v)
+{ return sendChecked(s, QByteArray("MEASurement1:STATistics ") + (v ? "ON" : "OFF")); }
+ScopeError CRTM3004Plugin::getMeasurementStatistics(U32BIT s, U32BIT c, Enum_Scope_MeasType t, S_Scope_MeasurementResult& o)
+{ return readMeasurement(s, c, t, o); }
+
+ScopeError CRTM3004Plugin::setCursorType(U32BIT s, Enum_Scope_CursorType v)
+{
+    const char* tok = (v == Enum_Scope_CursorType::m_enumHorizontal) ? "HORizontal"
+                    : (v == Enum_Scope_CursorType::m_enumVertical) ? "VERTical"
+                    : (v == Enum_Scope_CursorType::m_enumTrack) ? "TRACking" : "OFF";
+    if (v == Enum_Scope_CursorType::m_enumOff) return sendChecked(s, QByteArrayLiteral("CURSor1:STATe OFF"));
+    ScopeError e = sendChecked(s, QByteArrayLiteral("CURSor1:STATe ON"));
+    if (!e.isSuccess()) return e;
+    return sendChecked(s, QByteArray("CURSor1:FUNCtion ") + tok);
+}
+ScopeError CRTM3004Plugin::getCursorType(U32BIT s, Enum_Scope_CursorType& o)
+{
+    QByteArray r; ScopeError e = queryLine(s, QByteArrayLiteral("CURSor1:FUNCtion?"), r);
+    if (!e.isSuccess()) return e;
+    const QString t = QString::fromLatin1(r).trimmed().toUpper();
+    if (t.startsWith(QStringLiteral("HOR"))) o = Enum_Scope_CursorType::m_enumHorizontal;
+    else if (t.startsWith(QStringLiteral("VER"))) o = Enum_Scope_CursorType::m_enumVertical;
+    else if (t.startsWith(QStringLiteral("TRAC"))) o = Enum_Scope_CursorType::m_enumTrack;
+    else o = Enum_Scope_CursorType::m_enumOff;
+    return ScopeError();
+}
+ScopeError CRTM3004Plugin::setCursorSource(U32BIT s, U32BIT c)
+{ if (!validChannel(c)) return ScopeError(Enum_Scope_ErrorCode::INVALID_CHANNEL);
+  return sendChecked(s, QByteArray("CURSor1:SOURce CH") + QByteArray::number(c)); }
+ScopeError CRTM3004Plugin::setCursorPosition(U32BIT s, U32BIT i, FDOUBLE v)
+{ return sendChecked(s, QByteArray("CURSor1:X") + QByteArray::number(i == 0 ? 1 : i) + "Position " + fmtD(v)); }
+ScopeError CRTM3004Plugin::getCursorPosition(U32BIT s, U32BIT i, FDOUBLE& o)
+{ return queryDouble(s, QByteArray("CURSor1:X") + QByteArray::number(i == 0 ? 1 : i) + "Position?", o); }
+ScopeError CRTM3004Plugin::readCursorValues(U32BIT s, FDOUBLE& x1, FDOUBLE& x2, FDOUBLE& y1, FDOUBLE& y2)
+{
+    queryDouble(s, QByteArrayLiteral("CURSor1:X1Position?"), x1);
+    queryDouble(s, QByteArrayLiteral("CURSor1:X2Position?"), x2);
+    queryDouble(s, QByteArrayLiteral("CURSor1:Y1Position?"), y1);
+    queryDouble(s, QByteArrayLiteral("CURSor1:Y2Position?"), y2);
+    return ScopeError();
+}
+
+ScopeError CRTM3004Plugin::setMathOperation(U32BIT s, Enum_Scope_MathOp v)
+{
+    const char* op = "ADD";
+    switch (v) {
+    case Enum_Scope_MathOp::m_enumSub:  op = "SUB"; break;
+    case Enum_Scope_MathOp::m_enumMult: op = "MUL"; break;
+    case Enum_Scope_MathOp::m_enumDiv:  op = "DIV"; break;
+    case Enum_Scope_MathOp::m_enumFFT:  op = "FFT"; break;
+    default: break;
+    }
+    return sendChecked(s, QByteArray("CALCulate:MATH1:EXPRession:DEFine \"") + op + "\"");
+}
+ScopeError CRTM3004Plugin::setMathSource1(U32BIT s, U32BIT c)
+{ if (!validChannel(c)) return ScopeError(Enum_Scope_ErrorCode::INVALID_CHANNEL);
+  return sendChecked(s, QByteArray("CALCulate:MATH1:SOURce1 CH") + QByteArray::number(c)); }
+ScopeError CRTM3004Plugin::setMathSource2(U32BIT s, U32BIT c)
+{ if (!validChannel(c)) return ScopeError(Enum_Scope_ErrorCode::INVALID_CHANNEL);
+  return sendChecked(s, QByteArray("CALCulate:MATH1:SOURce2 CH") + QByteArray::number(c)); }
+ScopeError CRTM3004Plugin::enableMath(U32BIT s, bool v) { return sendChecked(s, QByteArray("CALCulate:MATH1:STATe ") + (v ? "ON" : "OFF")); }
+ScopeError CRTM3004Plugin::setFftWindow(U32BIT s, Enum_Scope_FftWindow v)
+{
+    const char* tok = "HANN";
+    switch (v) {
+    case Enum_Scope_FftWindow::m_enumRect:    tok = "RECTangular"; break;
+    case Enum_Scope_FftWindow::m_enumHamming: tok = "HAMMing"; break;
+    case Enum_Scope_FftWindow::m_enumBlackman:tok = "BLACkharris"; break;
+    case Enum_Scope_FftWindow::m_enumFlattop: tok = "FLATtop"; break;
+    default: break;
+    }
+    return sendChecked(s, QByteArray("CALCulate:MATH1:FFT:WINDow:TYPE ") + tok);
+}
+ScopeError CRTM3004Plugin::getFftWindow(U32BIT s, Enum_Scope_FftWindow& o)
+{
+    QByteArray r; ScopeError e = queryLine(s, QByteArrayLiteral("CALCulate:MATH1:FFT:WINDow:TYPE?"), r);
+    if (!e.isSuccess()) return e;
+    const QString t = QString::fromLatin1(r).trimmed().toUpper();
+    if (t.startsWith(QStringLiteral("RECT"))) o = Enum_Scope_FftWindow::m_enumRect;
+    else if (t.startsWith(QStringLiteral("HAMM"))) o = Enum_Scope_FftWindow::m_enumHamming;
+    else if (t.startsWith(QStringLiteral("BLAC"))) o = Enum_Scope_FftWindow::m_enumBlackman;
+    else if (t.startsWith(QStringLiteral("FLAT"))) o = Enum_Scope_FftWindow::m_enumFlattop;
+    else o = Enum_Scope_FftWindow::m_enumHann;
+    return ScopeError();
+}
+ScopeError CRTM3004Plugin::setFftSpan(U32BIT s, FDOUBLE v)   { return sendChecked(s, QByteArray("CALCulate:MATH1:FFT:SPAN ") + fmtD(v)); }
+ScopeError CRTM3004Plugin::setFftCenter(U32BIT s, FDOUBLE v) { return sendChecked(s, QByteArray("CALCulate:MATH1:FFT:CFRequency ") + fmtD(v)); }
+ScopeError CRTM3004Plugin::setMathScale(U32BIT s, FDOUBLE v)    { return sendChecked(s, QByteArray("CALCulate:MATH1:SCALe ") + fmtD(v)); }
+ScopeError CRTM3004Plugin::setMathPosition(U32BIT s, FDOUBLE v) { return sendChecked(s, QByteArray("CALCulate:MATH1:POSition ") + fmtD(v)); }
+
+ScopeError CRTM3004Plugin::setPersistence(U32BIT s, FDOUBLE v)
+{ return sendChecked(s, QByteArray("DISPlay:PERSistence:TIME ") + fmtD(v)); }
+ScopeError CRTM3004Plugin::setGraticule(U32BIT s, const QString& v) { return sendChecked(s, QByteArray("DISPlay:DIAGram:GRID:STYLe ") + v.toLatin1()); }
+ScopeError CRTM3004Plugin::setIntensity(U32BIT s, FDOUBLE v) { return sendChecked(s, QByteArray("DISPlay:INTensity:WAVeform ") + fmtD(v)); }
+ScopeError CRTM3004Plugin::setDisplayFormat(U32BIT s, Enum_Scope_TimebaseMode v)
+{ return sendChecked(s, QByteArray("DISPlay:MODE ") + ((v == Enum_Scope_TimebaseMode::m_enumXY) ? "XY" : "YT")); }
+ScopeError CRTM3004Plugin::setVectors(U32BIT s, bool v) { return sendChecked(s, QByteArray("DISPlay:DIAGram:STYLe ") + (v ? "VECTors" : "DOTS")); }
+
+ScopeError CRTM3004Plugin::saveSetup(U32BIT s, U32BIT loc)  { return sendChecked(s, QByteArray("*SAV ") + QByteArray::number(loc)); }
+ScopeError CRTM3004Plugin::recallSetup(U32BIT s, U32BIT loc){ return sendChecked(s, QByteArray("*RCL ") + QByteArray::number(loc)); }
+ScopeError CRTM3004Plugin::saveWaveformToFile(U32BIT s, U32BIT c, const QString& path)
+{ if (!validChannel(c)) return ScopeError(Enum_Scope_ErrorCode::INVALID_CHANNEL);
+  return sendChecked(s, QByteArray("EXPort:WAVeform:NAME \"") + path.toLatin1() + "\""); }
+ScopeError CRTM3004Plugin::captureScreenshot(U32BIT s, Enum_Scope_ImageFormat f, QByteArray& o)
+{
+    const char* fmt = (f == Enum_Scope_ImageFormat::m_enumBmp) ? "BMP" : "PNG";
+    ScopeError e = sendChecked(s, QByteArray("HCOPy:FORMat ") + fmt);
+    if (!e.isSuccess()) return e;
+    e = writeLine(s, QByteArrayLiteral("HCOPy:DATA?"));
+    if (!e.isSuccess()) return e;
+    return readBinaryBlock(s, o);
+}
+ScopeError CRTM3004Plugin::saveToReference(U32BIT s, U32BIT c, U32BIT slot)
+{ if (!validChannel(c)) return ScopeError(Enum_Scope_ErrorCode::INVALID_CHANNEL);
+  ScopeError e = sendChecked(s, QByteArray("REFCurve") + QByteArray::number(slot) + ":SOURce CH" + QByteArray::number(c));
+  if (!e.isSuccess()) return e;
+  return sendChecked(s, QByteArray("REFCurve") + QByteArray::number(slot) + ":UPDate"); }
+ScopeError CRTM3004Plugin::displayReference(U32BIT s, U32BIT slot, bool v)
+{ return sendChecked(s, QByteArray("REFCurve") + QByteArray::number(slot) + ":STATe " + (v ? "ON" : "OFF")); }
+
+ScopeError CRTM3004Plugin::enableDigitalChannel(U32BIT s, U32BIT d, bool v)
+{ if (!m_pLimits->m_bHasDigital) return ScopeError(Enum_Scope_ErrorCode::NOT_SUPPORTED);
+  return sendChecked(s, QByteArray("DIGital") + QByteArray::number(d) + ":STATe " + (v ? "ON" : "OFF")); }
+ScopeError CRTM3004Plugin::setDigitalThreshold(U32BIT s, U32BIT d, FDOUBLE v)
+{ if (!m_pLimits->m_bHasDigital) return ScopeError(Enum_Scope_ErrorCode::NOT_SUPPORTED);
+  return sendChecked(s, QByteArray("DIGital") + QByteArray::number(d) + ":THReshold " + fmtD(v)); }
+ScopeError CRTM3004Plugin::setPodThreshold(U32BIT s, U32BIT p, FDOUBLE v)
+{ if (!m_pLimits->m_bHasDigital) return ScopeError(Enum_Scope_ErrorCode::NOT_SUPPORTED);
+  return sendChecked(s, QByteArray("LOGic") + QByteArray::number(p) + ":THReshold " + fmtD(v)); }
+ScopeError CRTM3004Plugin::enableBus(U32BIT s, U32BIT b, bool v)
+{ if (!m_pLimits->m_bHasSerialDecode) return ScopeError(Enum_Scope_ErrorCode::NOT_SUPPORTED);
+  return sendChecked(s, QByteArray("BUS") + QByteArray::number(b) + ":STATe " + (v ? "ON" : "OFF")); }
+ScopeError CRTM3004Plugin::setBusType(U32BIT s, U32BIT b, const QString& v)
+{ if (!m_pLimits->m_bHasSerialDecode) return ScopeError(Enum_Scope_ErrorCode::NOT_SUPPORTED);
+  return sendChecked(s, QByteArray("BUS") + QByteArray::number(b) + ":TYPE " + v.toLatin1()); }
+ScopeError CRTM3004Plugin::readBusDecode(U32BIT s, U32BIT b, QString& o)
+{ if (!m_pLimits->m_bHasSerialDecode) return ScopeError(Enum_Scope_ErrorCode::NOT_SUPPORTED);
+  QByteArray r; ScopeError e = queryLine(s, QByteArray("BUS") + QByteArray::number(b) + ":STATe?", r);
+  if (e.isSuccess()) o = QString::fromLatin1(r).trimmed();
+  return e; }
+
+ScopeError CRTM3004Plugin::setAwgFunction(U32BIT s, const QString& v)
+{ if (!m_pLimits->m_bHasAWG) return ScopeError(Enum_Scope_ErrorCode::NOT_SUPPORTED);
+  return sendChecked(s, QByteArray("WGENerator:FUNCtion ") + v.toLatin1()); }
+ScopeError CRTM3004Plugin::setAwgFrequency(U32BIT s, FDOUBLE v)
+{ if (!m_pLimits->m_bHasAWG) return ScopeError(Enum_Scope_ErrorCode::NOT_SUPPORTED);
+  if (v < 0.0 || v > m_pLimits->m_dAwgFreqMax) return ScopeError(Enum_Scope_ErrorCode::PARAMETER_OUT_OF_RANGE, QStringLiteral("AWG frequency %1 out of range").arg(v));
+  return sendChecked(s, QByteArray("WGENerator:FREQuency ") + fmtD(v)); }
+ScopeError CRTM3004Plugin::setAwgAmplitude(U32BIT s, FDOUBLE v)
+{ if (!m_pLimits->m_bHasAWG) return ScopeError(Enum_Scope_ErrorCode::NOT_SUPPORTED);
+  if (v < 0.0 || v > m_pLimits->m_dAwgAmplMax) return ScopeError(Enum_Scope_ErrorCode::PARAMETER_OUT_OF_RANGE, QStringLiteral("AWG amplitude %1 out of range").arg(v));
+  return sendChecked(s, QByteArray("WGENerator:VOLTage ") + fmtD(v)); }
+ScopeError CRTM3004Plugin::setAwgOffset(U32BIT s, FDOUBLE v)
+{ if (!m_pLimits->m_bHasAWG) return ScopeError(Enum_Scope_ErrorCode::NOT_SUPPORTED);
+  return sendChecked(s, QByteArray("WGENerator:VOLTage:OFFSet ") + fmtD(v)); }
+ScopeError CRTM3004Plugin::enableAwgOutput(U32BIT s, bool v)
+{ if (!m_pLimits->m_bHasAWG) return ScopeError(Enum_Scope_ErrorCode::NOT_SUPPORTED);
+  return sendChecked(s, QByteArray("WGENerator:OUTPut:STATe ") + (v ? "ON" : "OFF")); }
+
+ScopeError CRTM3004Plugin::readOperationStatus(U32BIT s, U32BIT& o)
+{ FDOUBLE d = 0; ScopeError e = queryDouble(s, QByteArrayLiteral("STATus:OPERation:CONDition?"), d); o = e.isSuccess() ? static_cast<U32BIT>(d) : 0u; return ScopeError(); }
+ScopeError CRTM3004Plugin::readQuestionableStatus(U32BIT s, U32BIT& o)
+{ FDOUBLE d = 0; ScopeError e = queryDouble(s, QByteArrayLiteral("STATus:QUEStionable:CONDition?"), d); o = e.isSuccess() ? static_cast<U32BIT>(d) : 0u; return ScopeError(); }
+ScopeError CRTM3004Plugin::getInstrumentErrorCount(U32BIT s, U32BIT& o)
+{ FDOUBLE d = 0; ScopeError e = queryDouble(s, QByteArrayLiteral("SYSTem:ERRor:COUNt?"), d); o = e.isSuccess() ? static_cast<U32BIT>(d) : 0u; return ScopeError(); }
+ScopeError CRTM3004Plugin::setRemoteState(U32BIT s, Enum_Scope_RemoteState v)
+{ return sendChecked(s, QByteArray("SYSTem:REMote ") + ((v == Enum_Scope_RemoteState::m_enumLocal) ? "OFF" : "ON")); }
+ScopeError CRTM3004Plugin::getRemoteState(U32BIT s, Enum_Scope_RemoteState& o)
+{ (void)s; o = Enum_Scope_RemoteState::m_enumRemote; return ScopeError(); }
+ScopeError CRTM3004Plugin::setKeyLock(U32BIT s, bool v) { return sendChecked(s, QByteArray("SYSTem:KLOCk ") + (v ? "ON" : "OFF")); }
+ScopeError CRTM3004Plugin::isKeyLocked(U32BIT s, bool& o)
+{ FDOUBLE d = 0; ScopeError e = queryDouble(s, QByteArrayLiteral("SYSTem:KLOCk?"), d); if (e.isSuccess()) o = (d != 0.0); return e; }
+ScopeError CRTM3004Plugin::setBeeper(U32BIT s, bool v) { return sendChecked(s, QByteArray("SYSTem:BEEPer:STATe ") + (v ? "ON" : "OFF")); }

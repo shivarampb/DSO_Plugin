@@ -106,6 +106,73 @@ public:
     ScopeError readWaveform(U32BIT s, U32BIT c, S_Scope_Waveform& o) override;
     ScopeError digitizeChannel(U32BIT s, U32BIT c) override;
 
+    /*==== measurements ===================================================*/
+    ScopeError addMeasurement(U32BIT s, U32BIT c, Enum_Scope_MeasType t) override;
+    ScopeError readMeasurement(U32BIT s, U32BIT c, Enum_Scope_MeasType t, S_Scope_MeasurementResult& o) override;
+    ScopeError clearMeasurements(U32BIT s) override;
+    ScopeError setMeasureStatistics(U32BIT s, bool v) override;
+    ScopeError getMeasurementStatistics(U32BIT s, U32BIT c, Enum_Scope_MeasType t, S_Scope_MeasurementResult& o) override;
+
+    /*==== cursors ========================================================*/
+    ScopeError setCursorType(U32BIT s, Enum_Scope_CursorType v) override;
+    ScopeError getCursorType(U32BIT s, Enum_Scope_CursorType& o) override;
+    ScopeError setCursorSource(U32BIT s, U32BIT c) override;
+    ScopeError setCursorPosition(U32BIT s, U32BIT i, FDOUBLE v) override;
+    ScopeError getCursorPosition(U32BIT s, U32BIT i, FDOUBLE& o) override;
+    ScopeError readCursorValues(U32BIT s, FDOUBLE& x1, FDOUBLE& x2, FDOUBLE& y1, FDOUBLE& y2) override;
+
+    /*==== math / FFT =====================================================*/
+    ScopeError setMathOperation(U32BIT s, Enum_Scope_MathOp v) override;
+    ScopeError setMathSource1(U32BIT s, U32BIT c) override;
+    ScopeError setMathSource2(U32BIT s, U32BIT c) override;
+    ScopeError enableMath(U32BIT s, bool v) override;
+    ScopeError setFftWindow(U32BIT s, Enum_Scope_FftWindow v) override;
+    ScopeError getFftWindow(U32BIT s, Enum_Scope_FftWindow& o) override;
+    ScopeError setFftSpan(U32BIT s, FDOUBLE v) override;
+    ScopeError setFftCenter(U32BIT s, FDOUBLE v) override;
+    ScopeError setMathScale(U32BIT s, FDOUBLE v) override;
+    ScopeError setMathPosition(U32BIT s, FDOUBLE v) override;
+
+    /*==== display ========================================================*/
+    ScopeError setPersistence(U32BIT s, FDOUBLE v) override;
+    ScopeError setGraticule(U32BIT s, const QString& v) override;
+    ScopeError setIntensity(U32BIT s, FDOUBLE v) override;
+    ScopeError setDisplayFormat(U32BIT s, Enum_Scope_TimebaseMode v) override;
+    ScopeError setVectors(U32BIT s, bool v) override;
+
+    /*==== save / recall / screenshot =====================================*/
+    ScopeError saveSetup(U32BIT s, U32BIT loc) override;
+    ScopeError recallSetup(U32BIT s, U32BIT loc) override;
+    ScopeError saveWaveformToFile(U32BIT s, U32BIT c, const QString& path) override;
+    ScopeError captureScreenshot(U32BIT s, Enum_Scope_ImageFormat f, QByteArray& o) override;
+    ScopeError saveToReference(U32BIT s, U32BIT c, U32BIT slot) override;
+    ScopeError displayReference(U32BIT s, U32BIT slot, bool v) override;
+
+    /*==== digital / MSO (gated on capability) ============================*/
+    ScopeError enableDigitalChannel(U32BIT s, U32BIT d, bool v) override;
+    ScopeError setDigitalThreshold(U32BIT s, U32BIT d, FDOUBLE v) override;
+    ScopeError setPodThreshold(U32BIT s, U32BIT p, FDOUBLE v) override;
+    ScopeError enableBus(U32BIT s, U32BIT b, bool v) override;
+    ScopeError setBusType(U32BIT s, U32BIT b, const QString& v) override;
+    ScopeError readBusDecode(U32BIT s, U32BIT b, QString& o) override;
+
+    /*==== AWG (gated on capability) ======================================*/
+    ScopeError setAwgFunction(U32BIT s, const QString& v) override;
+    ScopeError setAwgFrequency(U32BIT s, FDOUBLE v) override;
+    ScopeError setAwgAmplitude(U32BIT s, FDOUBLE v) override;
+    ScopeError setAwgOffset(U32BIT s, FDOUBLE v) override;
+    ScopeError enableAwgOutput(U32BIT s, bool v) override;
+
+    /*==== status / system extras =========================================*/
+    ScopeError readOperationStatus(U32BIT s, U32BIT& o) override;
+    ScopeError readQuestionableStatus(U32BIT s, U32BIT& o) override;
+    ScopeError getInstrumentErrorCount(U32BIT s, U32BIT& o) override;
+    ScopeError setRemoteState(U32BIT s, Enum_Scope_RemoteState v) override;
+    ScopeError getRemoteState(U32BIT s, Enum_Scope_RemoteState& o) override;
+    ScopeError setKeyLock(U32BIT s, bool v) override;
+    ScopeError isKeyLocked(U32BIT s, bool& o) override;
+    ScopeError setBeeper(U32BIT s, bool v) override;
+
     /*==== status =========================================================*/
     ScopeError readErrorStatus(U32BIT s, U32BIT c, S_Scope_DeviceErrorStatus& o) override;
     ScopeError clearErrorStatus(U32BIT s, U32BIT c) override;

@@ -412,6 +412,144 @@ static void testRealModels(CScopeManager& mgr)
     }
 }
 
+/*----------------------------------------------------------------------------
+ * M5 feature slices exercised on one model per dialect (Tek/R&S/Keysight),
+ * end-to-end through MockVisa: measurements (values checked), cursors, math,
+ * display, save/recall, screenshot, AWG (capability-gated), status/keylock.
+ *--------------------------------------------------------------------------*/
+static void testFeatureSlicesFor(CScopeManager& mgr, const QString& model)
+{
+    section(QStringLiteral("M5 feature slices: %1").arg(model).toLatin1().constData());
+    if (!mgr.getAvailablePlugins().contains(model)) { std::printf("  [SKIP] %s\n", model.toLatin1().constData()); return; }
+    const U32BIT sc = 12;
+    if (mgr.instanceExists(sc)) mgr.destroyInstance(sc);
+    checkOk(mgr.createInstance(sc, model), QStringLiteral("createInstance"));
+    S_Scope_ConnectionConfig cfg; cfg.setResourceString(QStringLiteral("MOCK0::%1::INSTR").arg(model));
+    checkOk(mgr.connect(sc, cfg), QStringLiteral("connect"));
+    mgr.enableChannel(sc, 1, true);
+
+    // measurements (default 1000 pts -> 3 kHz, 0.8 Vpp, 0.4 Vmax)
+    S_Scope_MeasurementResult r;
+    checkOk(mgr.addMeasurement(sc, 1, Enum_Scope_MeasType::m_enumFrequency), QStringLiteral("addMeasurement"));
+    checkOk(mgr.readMeasurement(sc, 1, Enum_Scope_MeasType::m_enumFrequency, r), QStringLiteral("readMeasurement freq"));
+    checkTrue(near(r.m_dValue, 3000.0, 0.02, 0.0), QStringLiteral("%1 freq ~= 3kHz (got %2)").arg(model).arg(r.m_dValue));
+    checkOk(mgr.readMeasurement(sc, 1, Enum_Scope_MeasType::m_enumVpp, r), QStringLiteral("readMeasurement Vpp"));
+    checkTrue(near(r.m_dValue, 0.8, 0.02, 0.0), QStringLiteral("%1 Vpp ~= 0.8 (got %2)").arg(model).arg(r.m_dValue));
+    checkOk(mgr.readMeasurement(sc, 1, Enum_Scope_MeasType::m_enumVmax, r), QStringLiteral("readMeasurement Vmax"));
+    checkTrue(near(r.m_dValue, 0.4, 0.02, 0.0), QStringLiteral("%1 Vmax ~= 0.4").arg(model));
+    checkOk(mgr.setMeasureStatistics(sc, true), QStringLiteral("setMeasureStatistics"));
+    checkOk(mgr.clearMeasurements(sc), QStringLiteral("clearMeasurements"));
+
+    // cursors
+    checkOk(mgr.setCursorType(sc, Enum_Scope_CursorType::m_enumVertical), QStringLiteral("setCursorType"));
+    Enum_Scope_CursorType ct = Enum_Scope_CursorType::m_enumOff;
+    checkOk(mgr.getCursorType(sc, ct), QStringLiteral("getCursorType"));
+    checkOk(mgr.setCursorSource(sc, 1), QStringLiteral("setCursorSource"));
+    FDOUBLE x1, x2, y1, y2;
+    checkOk(mgr.readCursorValues(sc, x1, x2, y1, y2), QStringLiteral("readCursorValues"));
+
+    // math / FFT
+    checkOk(mgr.setMathOperation(sc, Enum_Scope_MathOp::m_enumFFT), QStringLiteral("setMathOperation FFT"));
+    checkOk(mgr.enableMath(sc, true), QStringLiteral("enableMath"));
+    checkOk(mgr.setFftWindow(sc, Enum_Scope_FftWindow::m_enumHann), QStringLiteral("setFftWindow"));
+    Enum_Scope_FftWindow fw = Enum_Scope_FftWindow::m_enumRect;
+    checkOk(mgr.getFftWindow(sc, fw), QStringLiteral("getFftWindow"));
+    checkTrue(fw == Enum_Scope_FftWindow::m_enumHann, QStringLiteral("FFT window round-trips"));
+
+    // display + save/recall + screenshot
+    checkOk(mgr.setDisplayFormat(sc, Enum_Scope_TimebaseMode::m_enumMain), QStringLiteral("setDisplayFormat"));
+    checkOk(mgr.setVectors(sc, true), QStringLiteral("setVectors"));
+    checkOk(mgr.saveSetup(sc, 1), QStringLiteral("saveSetup"));
+    checkOk(mgr.recallSetup(sc, 1), QStringLiteral("recallSetup"));
+    QByteArray png;
+    checkOk(mgr.captureScreenshot(sc, Enum_Scope_ImageFormat::m_enumPng, png), QStringLiteral("captureScreenshot"));
+    checkTrue(png.contains("\x89PNG"), QStringLiteral("screenshot is a PNG"));
+
+    // AWG (capability-gated)
+    S_Scope_Capabilities caps = mgr.getCapabilities(sc);
+    if (caps.m_bHasAWG) {
+        checkOk(mgr.setAwgFunction(sc, QStringLiteral("SINE")), QStringLiteral("setAwgFunction"));
+        checkOk(mgr.setAwgFrequency(sc, 1000.0), QStringLiteral("setAwgFrequency in-range"));
+        checkCode(mgr.setAwgFrequency(sc, 1e12), Enum_Scope_ErrorCode::PARAMETER_OUT_OF_RANGE, QStringLiteral("AWG freq out-of-range rejected"));
+        checkOk(mgr.enableAwgOutput(sc, true), QStringLiteral("enableAwgOutput"));
+    } else {
+        checkCode(mgr.setAwgFrequency(sc, 1000.0), Enum_Scope_ErrorCode::NOT_SUPPORTED, QStringLiteral("AWG NOT_SUPPORTED (no generator)"));
+    }
+
+    // digital (capability-gated)
+    if (caps.m_bHasDigital)
+        checkOk(mgr.enableDigitalChannel(sc, 0, true), QStringLiteral("enableDigitalChannel"));
+    else
+        checkCode(mgr.enableDigitalChannel(sc, 0, true), Enum_Scope_ErrorCode::NOT_SUPPORTED, QStringLiteral("digital NOT_SUPPORTED (no MSO)"));
+
+    // status / keylock
+    checkOk(mgr.setKeyLock(sc, true), QStringLiteral("setKeyLock"));
+    bool locked = false;
+    checkOk(mgr.isKeyLocked(sc, locked), QStringLiteral("isKeyLocked"));
+    U32BIT op = 0;
+    checkOk(mgr.readOperationStatus(sc, op), QStringLiteral("readOperationStatus"));
+
+    mgr.disconnect(sc);
+    mgr.destroyInstance(sc);
+}
+
+static void testFeatureSlices(CScopeManager& mgr)
+{
+    testFeatureSlicesFor(mgr, QStringLiteral("MDO34"));      // Tektronix
+    testFeatureSlicesFor(mgr, QStringLiteral("RTM3004"));    // R&S
+    testFeatureSlicesFor(mgr, QStringLiteral("DSOX2012A"));  // Keysight (2ch, no digital)
+    testFeatureSlicesFor(mgr, QStringLiteral("MSO6054A"));   // Keysight MSO (digital, no AWG)
+}
+
+/*----------------------------------------------------------------------------
+ * M7 parity: SimScope and the MockVisa-backed real plugin must report the
+ * SAME getParameterRange for a model (both keyed off the shared catalog row),
+ * and both must produce a non-empty scaled waveform.
+ *--------------------------------------------------------------------------*/
+static void testParity(CScopeManager& mgr)
+{
+    section("M7 SimScope/MockVisa parity (getParameterRange + waveform)");
+    static const char* models[] = { "MDO34","RTM3004","DSO7104B","DSOS204A","DSOX2012A",
+                                     "MSO6054A","RTO2064","TDS1012B","TDS2024C","WaveSurfer42Xs" };
+    for (const char* m : models) {
+        const QString model = QString::fromLatin1(m);
+        if (!mgr.getAvailablePlugins().contains(model)) continue;
+        const U32BIT simN = 20, realN = 21;
+        if (mgr.instanceExists(simN)) mgr.destroyInstance(simN);
+        if (mgr.instanceExists(realN)) mgr.destroyInstance(realN);
+        mgr.createInstance(simN, QStringLiteral("SimScope"));
+        mgr.createInstance(realN, model);
+        S_Scope_ConnectionConfig cs; cs.setResourceString(QStringLiteral("SIM::%1").arg(model));
+        S_Scope_ConnectionConfig cr; cr.setResourceString(QStringLiteral("MOCK0::%1::INSTR").arg(model));
+        const bool okS = mgr.connect(simN, cs).isSuccess();
+        const bool okR = mgr.connect(realN, cr).isSuccess();
+        checkTrue(okS && okR, QStringLiteral("%1: both Sim and real connect").arg(model));
+        if (okS && okR) {
+            const Enum_Scope_ParamId params[] = {
+                Enum_Scope_ParamId::m_enumVerticalScale, Enum_Scope_ParamId::m_enumTimebaseScale,
+                Enum_Scope_ParamId::m_enumVerticalOffset, Enum_Scope_ParamId::m_enumAverageCount };
+            bool parity = true;
+            for (Enum_Scope_ParamId p : params) {
+                S_Scope_ParameterRange rs, rr;
+                mgr.getParameterRange(simN, 1, p, rs);
+                mgr.getParameterRange(realN, 1, p, rr);
+                if (!near(rs.m_dMin, rr.m_dMin, 0.0, 1e-9) || !near(rs.m_dMax, rr.m_dMax, 0.0, 1e-9))
+                    parity = false;
+            }
+            checkTrue(parity, QStringLiteral("%1: getParameterRange parity Sim vs real").arg(model));
+
+            mgr.enableChannel(simN, 1, true);
+            mgr.enableChannel(realN, 1, true);
+            S_Scope_Waveform ws, wr;
+            const bool wS = mgr.readWaveform(simN, 1, ws).isSuccess() && ws.pointCount() > 1;
+            const bool wR = mgr.readWaveform(realN, 1, wr).isSuccess() && wr.pointCount() > 1;
+            checkTrue(wS && wR, QStringLiteral("%1: both produce a non-empty waveform").arg(model));
+        }
+        mgr.destroyInstance(simN);
+        mgr.destroyInstance(realN);
+    }
+}
+
 int main(int argc, char** argv)
 {
     QCoreApplication app(argc, argv);
@@ -428,6 +566,8 @@ int main(int argc, char** argv)
     testInstances(mgr);
     testMockVisa();
     testRealModels(mgr);
+    testFeatureSlices(mgr);
+    testParity(mgr);
     testSimApi(mgr);
     testRangeMatrix(mgr);
     testErrorPaths(mgr);

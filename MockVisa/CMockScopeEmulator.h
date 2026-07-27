@@ -37,11 +37,14 @@ public:
 private:
     void pushError(int in_iCode, const char* in_szMessage);
     QByteArray idnString() const;
+    /* value of an automatic measurement computed from the synthetic sine */
+    double measurementValue(const QString& in_strType) const;
 
     QString                        m_strModelName;
     QString                        m_strManufacturer;
     QString                        m_strIdnMatch;
     int                            m_iWfmPoints;
+    QString                        m_strMeasType;   /* Tek IMMed:TYPe state    */
     QMap<QString, QByteArray>      m_mapValues;   /* header -> last value    */
     QList<QPair<int, QByteArray> > m_lstErrors;   /* SYST:ERR? queue         */
 };

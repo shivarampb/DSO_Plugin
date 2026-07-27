@@ -109,12 +109,21 @@ ScopeError CSimScopePlugin::connect(U32BIT s, const S_Scope_ConnectionConfig& c)
     S_SimDevice d;
     d.m_u32Timeout = c.m_u32Timeout ? c.m_u32Timeout : 5000;
 
-    // model token: the first token that matches the catalog (default MDO34)
+    // model token: the first token that matches a catalog name (case-insensitive;
+    // the resource was upper-cased, but catalog names may be mixed case)
     const S_ScopeLimits* pLimits = ScopeFindLimits("MDO34");
     QString strModel = QStringLiteral("MDO34");
+    int iCatCount = 0;
+    const S_ScopeLimits* cat = ScopeLimitsCatalog(&iCatCount);
+    bool bFound = false;
     for (const QString& t : lstTok) {
-        const S_ScopeLimits* p = ScopeFindLimits(t.toLatin1().constData());
-        if (p != nullptr) { pLimits = p; strModel = t; break; }
+        for (int i = 0; i < iCatCount && !bFound; ++i) {
+            const QString name = QString::fromLatin1(cat[i].m_szModelName);
+            if (QString::compare(t, name, Qt::CaseInsensitive) == 0) {
+                pLimits = &cat[i]; strModel = name; bFound = true;
+            }
+        }
+        if (bFound) break;
     }
     // shape token
     d.m_eShape = SHAPE_SINE;

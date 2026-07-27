@@ -7,9 +7,8 @@
  *  Dialect: Keysight InfiniiVision Programmer's Guide. Exercised against the
  *  MockVisa emulator; TODO(manual) constants await manuals/WaveSurfer42Xs/.
  *==========================================================================*/
-/* TODO(manual): this plugin currently uses placeholder SCPI exercised only
- * against MockVisa. Replace with the Teledyne LeCroy MAUI / X-Stream Remote
- * Control command set once manuals/WaveSurfer42Xs/ is available. */
+/* TODO(manual): placeholder SCPI exercised only against MockVisa; replace
+ * with the Teledyne LeCroy MAUI / X-Stream command set once available. */
 #include "WaveSurfer42XsPlugin.h"
 #include "VisaHelper.h"
 
@@ -445,3 +444,218 @@ ScopeError CWaveSurfer42XsPlugin::readStandardEventStatus(U32BIT s, U32BIT& o)
 ScopeError CWaveSurfer42XsPlugin::writeScpi(U32BIT s, const QString& v) { return writeLine(s, v.toLatin1()); }
 ScopeError CWaveSurfer42XsPlugin::queryScpi(U32BIT s, const QString& v, QString& o)
 { QByteArray r; ScopeError e = queryLine(s, v.toLatin1(), r); if (e.isSuccess()) o = QString::fromLatin1(r).trimmed(); return e; }
+
+/*============================================================================
+ *  M5 feature slices - Keysight InfiniiVision dialect.
+ *==========================================================================*/
+namespace {
+const char* ksMeasTok(Enum_Scope_MeasType t)
+{
+    switch (t) {
+    case Enum_Scope_MeasType::m_enumVpp:       return "VPP";
+    case Enum_Scope_MeasType::m_enumVmax:      return "VMAX";
+    case Enum_Scope_MeasType::m_enumVmin:      return "VMIN";
+    case Enum_Scope_MeasType::m_enumVrms:      return "VRMS";
+    case Enum_Scope_MeasType::m_enumVavg:      return "VAVerage";
+    case Enum_Scope_MeasType::m_enumFrequency: return "FREQuency";
+    case Enum_Scope_MeasType::m_enumPeriod:    return "PERiod";
+    case Enum_Scope_MeasType::m_enumRiseTime:  return "RISetime";
+    case Enum_Scope_MeasType::m_enumFallTime:  return "FALLtime";
+    case Enum_Scope_MeasType::m_enumPosWidth:  return "PWIDth";
+    case Enum_Scope_MeasType::m_enumNegWidth:  return "NWIDth";
+    case Enum_Scope_MeasType::m_enumDutyCycle: return "DUTYcycle";
+    case Enum_Scope_MeasType::m_enumPhase:     return "PHASe";
+    case Enum_Scope_MeasType::m_enumDelay:     return "DELay";
+    default:                                   return "FREQuency";
+    }
+}
+QString ksMeasUnits(Enum_Scope_MeasType t)
+{
+    switch (t) {
+    case Enum_Scope_MeasType::m_enumFrequency: return QStringLiteral("Hz");
+    case Enum_Scope_MeasType::m_enumPeriod:
+    case Enum_Scope_MeasType::m_enumRiseTime:
+    case Enum_Scope_MeasType::m_enumFallTime:
+    case Enum_Scope_MeasType::m_enumPosWidth:
+    case Enum_Scope_MeasType::m_enumNegWidth:  return QStringLiteral("s");
+    case Enum_Scope_MeasType::m_enumDutyCycle: return QStringLiteral("%");
+    case Enum_Scope_MeasType::m_enumPhase:     return QStringLiteral("deg");
+    default:                                   return QStringLiteral("V");
+    }
+}
+} // namespace
+
+ScopeError CWaveSurfer42XsPlugin::addMeasurement(U32BIT s, U32BIT c, Enum_Scope_MeasType t)
+{ if (!validChannel(c)) return ScopeError(Enum_Scope_ErrorCode::INVALID_CHANNEL);
+  return sendChecked(s, QByteArray(":MEASure:") + ksMeasTok(t) + " CHANnel" + QByteArray::number(c)); }
+ScopeError CWaveSurfer42XsPlugin::readMeasurement(U32BIT s, U32BIT c, Enum_Scope_MeasType t, S_Scope_MeasurementResult& o)
+{
+    if (!validChannel(c)) return ScopeError(Enum_Scope_ErrorCode::INVALID_CHANNEL);
+    FDOUBLE v = 0.0;
+    ScopeError e = queryDouble(s, QByteArray(":MEASure:") + ksMeasTok(t) + "? CHANnel" + QByteArray::number(c), v);
+    if (!e.isSuccess()) return e;
+    o.m_eType = t; o.m_dValue = v; o.m_bValid = true; o.m_strUnits = ksMeasUnits(t);
+    o.m_dMean = v; o.m_dMin = v; o.m_dMax = v; o.m_dStdDev = 0.0;
+    return ScopeError();
+}
+ScopeError CWaveSurfer42XsPlugin::clearMeasurements(U32BIT s) { return writeLine(s, QByteArrayLiteral(":MEASure:CLEar")); }
+ScopeError CWaveSurfer42XsPlugin::setMeasureStatistics(U32BIT s, bool v)
+{ return sendChecked(s, QByteArray(":MEASure:STATistics ") + (v ? "ON" : "OFF")); }
+ScopeError CWaveSurfer42XsPlugin::getMeasurementStatistics(U32BIT s, U32BIT c, Enum_Scope_MeasType t, S_Scope_MeasurementResult& o)
+{ return readMeasurement(s, c, t, o); }
+
+ScopeError CWaveSurfer42XsPlugin::setCursorType(U32BIT s, Enum_Scope_CursorType v)
+{
+    const char* tok = (v == Enum_Scope_CursorType::m_enumOff) ? "OFF"
+                    : (v == Enum_Scope_CursorType::m_enumTrack) ? "WAVeform" : "MANual";
+    return sendChecked(s, QByteArray(":MARKer:MODE ") + tok);
+}
+ScopeError CWaveSurfer42XsPlugin::getCursorType(U32BIT s, Enum_Scope_CursorType& o)
+{
+    QByteArray r; ScopeError e = queryLine(s, QByteArrayLiteral(":MARKer:MODE?"), r);
+    if (!e.isSuccess()) return e;
+    const QString t = QString::fromLatin1(r).trimmed().toUpper();
+    if (t.startsWith(QStringLiteral("OFF"))) o = Enum_Scope_CursorType::m_enumOff;
+    else if (t.startsWith(QStringLiteral("WAV"))) o = Enum_Scope_CursorType::m_enumTrack;
+    else o = Enum_Scope_CursorType::m_enumVertical;
+    return ScopeError();
+}
+ScopeError CWaveSurfer42XsPlugin::setCursorSource(U32BIT s, U32BIT c)
+{ if (!validChannel(c)) return ScopeError(Enum_Scope_ErrorCode::INVALID_CHANNEL);
+  return sendChecked(s, QByteArray(":MARKer:X1Y1source CHANnel") + QByteArray::number(c)); }
+ScopeError CWaveSurfer42XsPlugin::setCursorPosition(U32BIT s, U32BIT i, FDOUBLE v)
+{ return sendChecked(s, QByteArray(":MARKer:X") + QByteArray::number(i == 0 ? 1 : i) + "Position " + fmtD(v)); }
+ScopeError CWaveSurfer42XsPlugin::getCursorPosition(U32BIT s, U32BIT i, FDOUBLE& o)
+{ return queryDouble(s, QByteArray(":MARKer:X") + QByteArray::number(i == 0 ? 1 : i) + "Position?", o); }
+ScopeError CWaveSurfer42XsPlugin::readCursorValues(U32BIT s, FDOUBLE& x1, FDOUBLE& x2, FDOUBLE& y1, FDOUBLE& y2)
+{
+    queryDouble(s, QByteArrayLiteral(":MARKer:X1Position?"), x1);
+    queryDouble(s, QByteArrayLiteral(":MARKer:X2Position?"), x2);
+    queryDouble(s, QByteArrayLiteral(":MARKer:Y1Position?"), y1);
+    queryDouble(s, QByteArrayLiteral(":MARKer:Y2Position?"), y2);
+    return ScopeError();
+}
+
+ScopeError CWaveSurfer42XsPlugin::setMathOperation(U32BIT s, Enum_Scope_MathOp v)
+{
+    const char* op = "ADD";
+    switch (v) {
+    case Enum_Scope_MathOp::m_enumSub:  op = "SUBTract"; break;
+    case Enum_Scope_MathOp::m_enumMult: op = "MULTiply"; break;
+    case Enum_Scope_MathOp::m_enumDiv:  op = "DIVide"; break;
+    case Enum_Scope_MathOp::m_enumFFT:  op = "FFT"; break;
+    default: break;
+    }
+    return sendChecked(s, QByteArray(":FUNCtion:OPERation ") + op);
+}
+ScopeError CWaveSurfer42XsPlugin::setMathSource1(U32BIT s, U32BIT c)
+{ if (!validChannel(c)) return ScopeError(Enum_Scope_ErrorCode::INVALID_CHANNEL);
+  return sendChecked(s, QByteArray(":FUNCtion:SOURce1 CHANnel") + QByteArray::number(c)); }
+ScopeError CWaveSurfer42XsPlugin::setMathSource2(U32BIT s, U32BIT c)
+{ if (!validChannel(c)) return ScopeError(Enum_Scope_ErrorCode::INVALID_CHANNEL);
+  return sendChecked(s, QByteArray(":FUNCtion:SOURce2 CHANnel") + QByteArray::number(c)); }
+ScopeError CWaveSurfer42XsPlugin::enableMath(U32BIT s, bool v) { return sendChecked(s, QByteArray(":FUNCtion:DISPlay ") + (v ? "ON" : "OFF")); }
+ScopeError CWaveSurfer42XsPlugin::setFftWindow(U32BIT s, Enum_Scope_FftWindow v)
+{
+    const char* tok = "HANNing";
+    switch (v) {
+    case Enum_Scope_FftWindow::m_enumRect:    tok = "RECTangular"; break;
+    case Enum_Scope_FftWindow::m_enumHamming: tok = "HAMMing"; break;
+    case Enum_Scope_FftWindow::m_enumBlackman:tok = "BHARris"; break;
+    case Enum_Scope_FftWindow::m_enumFlattop: tok = "FLATtop"; break;
+    default: break;
+    }
+    return sendChecked(s, QByteArray(":FUNCtion:FFT:WINDow ") + tok);
+}
+ScopeError CWaveSurfer42XsPlugin::getFftWindow(U32BIT s, Enum_Scope_FftWindow& o)
+{
+    QByteArray r; ScopeError e = queryLine(s, QByteArrayLiteral(":FUNCtion:FFT:WINDow?"), r);
+    if (!e.isSuccess()) return e;
+    const QString t = QString::fromLatin1(r).trimmed().toUpper();
+    if (t.startsWith(QStringLiteral("RECT"))) o = Enum_Scope_FftWindow::m_enumRect;
+    else if (t.startsWith(QStringLiteral("HAMM"))) o = Enum_Scope_FftWindow::m_enumHamming;
+    else if (t.startsWith(QStringLiteral("BHAR"))) o = Enum_Scope_FftWindow::m_enumBlackman;
+    else if (t.startsWith(QStringLiteral("FLAT"))) o = Enum_Scope_FftWindow::m_enumFlattop;
+    else o = Enum_Scope_FftWindow::m_enumHann;
+    return ScopeError();
+}
+ScopeError CWaveSurfer42XsPlugin::setFftSpan(U32BIT s, FDOUBLE v)   { return sendChecked(s, QByteArray(":FUNCtion:FFT:SPAN ") + fmtD(v)); }
+ScopeError CWaveSurfer42XsPlugin::setFftCenter(U32BIT s, FDOUBLE v) { return sendChecked(s, QByteArray(":FUNCtion:FFT:CENTer ") + fmtD(v)); }
+ScopeError CWaveSurfer42XsPlugin::setMathScale(U32BIT s, FDOUBLE v)    { return sendChecked(s, QByteArray(":FUNCtion:SCALe ") + fmtD(v)); }
+ScopeError CWaveSurfer42XsPlugin::setMathPosition(U32BIT s, FDOUBLE v) { return sendChecked(s, QByteArray(":FUNCtion:OFFSet ") + fmtD(v)); }
+
+ScopeError CWaveSurfer42XsPlugin::setPersistence(U32BIT s, FDOUBLE v)
+{ return sendChecked(s, QByteArray(":DISPlay:PERSistence ") + ((v > 0.0) ? fmtD(v) : QByteArray("MINimum"))); }
+ScopeError CWaveSurfer42XsPlugin::setGraticule(U32BIT s, const QString& v) { return sendChecked(s, QByteArray(":DISPlay:GRATicule ") + v.toLatin1()); }
+ScopeError CWaveSurfer42XsPlugin::setIntensity(U32BIT s, FDOUBLE v) { return sendChecked(s, QByteArray(":DISPlay:INTensity:WAVeform ") + fmtD(v)); }
+ScopeError CWaveSurfer42XsPlugin::setDisplayFormat(U32BIT s, Enum_Scope_TimebaseMode v)
+{ return sendChecked(s, QByteArray(":TIMebase:MODE ") + ((v == Enum_Scope_TimebaseMode::m_enumXY) ? "XY" : "MAIN")); }
+ScopeError CWaveSurfer42XsPlugin::setVectors(U32BIT s, bool v) { return sendChecked(s, QByteArray(":DISPlay:VECTors ") + (v ? "ON" : "OFF")); }
+
+ScopeError CWaveSurfer42XsPlugin::saveSetup(U32BIT s, U32BIT loc)  { return sendChecked(s, QByteArray("*SAV ") + QByteArray::number(loc)); }
+ScopeError CWaveSurfer42XsPlugin::recallSetup(U32BIT s, U32BIT loc){ return sendChecked(s, QByteArray("*RCL ") + QByteArray::number(loc)); }
+ScopeError CWaveSurfer42XsPlugin::saveWaveformToFile(U32BIT s, U32BIT c, const QString& path)
+{ if (!validChannel(c)) return ScopeError(Enum_Scope_ErrorCode::INVALID_CHANNEL);
+  return sendChecked(s, QByteArray(":SAVE:WAVeform:STARt \"") + path.toLatin1() + "\""); }
+ScopeError CWaveSurfer42XsPlugin::saveToReference(U32BIT s, U32BIT c, U32BIT slot)
+{ if (!validChannel(c)) return ScopeError(Enum_Scope_ErrorCode::INVALID_CHANNEL);
+  ScopeError e = sendChecked(s, QByteArray(":REFerence:SOURce CHANnel") + QByteArray::number(c));
+  if (!e.isSuccess()) return e;
+  return sendChecked(s, QByteArray(":REFerence:SAVE ") + QByteArray::number(slot)); }
+ScopeError CWaveSurfer42XsPlugin::displayReference(U32BIT s, U32BIT slot, bool v)
+{ (void)slot; return sendChecked(s, QByteArray(":REFerence:DISPlay ") + (v ? "ON" : "OFF")); }
+
+ScopeError CWaveSurfer42XsPlugin::enableDigitalChannel(U32BIT s, U32BIT d, bool v)
+{ if (!m_pLimits->m_bHasDigital) return ScopeError(Enum_Scope_ErrorCode::NOT_SUPPORTED);
+  return sendChecked(s, QByteArray(":DIGital") + QByteArray::number(d) + ":DISPlay " + (v ? "ON" : "OFF")); }
+ScopeError CWaveSurfer42XsPlugin::setDigitalThreshold(U32BIT s, U32BIT d, FDOUBLE v)
+{ if (!m_pLimits->m_bHasDigital) return ScopeError(Enum_Scope_ErrorCode::NOT_SUPPORTED);
+  return sendChecked(s, QByteArray(":DIGital") + QByteArray::number(d) + ":THReshold " + fmtD(v)); }
+ScopeError CWaveSurfer42XsPlugin::setPodThreshold(U32BIT s, U32BIT p, FDOUBLE v)
+{ if (!m_pLimits->m_bHasDigital) return ScopeError(Enum_Scope_ErrorCode::NOT_SUPPORTED);
+  return sendChecked(s, QByteArray(":POD") + QByteArray::number(p) + ":THReshold " + fmtD(v)); }
+ScopeError CWaveSurfer42XsPlugin::enableBus(U32BIT s, U32BIT b, bool v)
+{ if (!m_pLimits->m_bHasSerialDecode) return ScopeError(Enum_Scope_ErrorCode::NOT_SUPPORTED);
+  return sendChecked(s, QByteArray(":SBUS") + QByteArray::number(b) + ":DISPlay " + (v ? "ON" : "OFF")); }
+ScopeError CWaveSurfer42XsPlugin::setBusType(U32BIT s, U32BIT b, const QString& v)
+{ if (!m_pLimits->m_bHasSerialDecode) return ScopeError(Enum_Scope_ErrorCode::NOT_SUPPORTED);
+  return sendChecked(s, QByteArray(":SBUS") + QByteArray::number(b) + ":MODE " + v.toLatin1()); }
+ScopeError CWaveSurfer42XsPlugin::readBusDecode(U32BIT s, U32BIT b, QString& o)
+{ if (!m_pLimits->m_bHasSerialDecode) return ScopeError(Enum_Scope_ErrorCode::NOT_SUPPORTED);
+  QByteArray r; ScopeError e = queryLine(s, QByteArray(":SBUS") + QByteArray::number(b) + ":MODE?", r);
+  if (e.isSuccess()) o = QString::fromLatin1(r).trimmed();
+  return e; }
+
+ScopeError CWaveSurfer42XsPlugin::setAwgFunction(U32BIT s, const QString& v)
+{ if (!m_pLimits->m_bHasAWG) return ScopeError(Enum_Scope_ErrorCode::NOT_SUPPORTED);
+  return sendChecked(s, QByteArray(":WGEN:FUNCtion ") + v.toLatin1()); }
+ScopeError CWaveSurfer42XsPlugin::setAwgFrequency(U32BIT s, FDOUBLE v)
+{ if (!m_pLimits->m_bHasAWG) return ScopeError(Enum_Scope_ErrorCode::NOT_SUPPORTED);
+  if (v < 0.0 || v > m_pLimits->m_dAwgFreqMax) return ScopeError(Enum_Scope_ErrorCode::PARAMETER_OUT_OF_RANGE, QStringLiteral("AWG frequency %1 out of range").arg(v));
+  return sendChecked(s, QByteArray(":WGEN:FREQuency ") + fmtD(v)); }
+ScopeError CWaveSurfer42XsPlugin::setAwgAmplitude(U32BIT s, FDOUBLE v)
+{ if (!m_pLimits->m_bHasAWG) return ScopeError(Enum_Scope_ErrorCode::NOT_SUPPORTED);
+  if (v < 0.0 || v > m_pLimits->m_dAwgAmplMax) return ScopeError(Enum_Scope_ErrorCode::PARAMETER_OUT_OF_RANGE, QStringLiteral("AWG amplitude %1 out of range").arg(v));
+  return sendChecked(s, QByteArray(":WGEN:VOLTage ") + fmtD(v)); }
+ScopeError CWaveSurfer42XsPlugin::setAwgOffset(U32BIT s, FDOUBLE v)
+{ if (!m_pLimits->m_bHasAWG) return ScopeError(Enum_Scope_ErrorCode::NOT_SUPPORTED);
+  return sendChecked(s, QByteArray(":WGEN:VOLTage:OFFSet ") + fmtD(v)); }
+ScopeError CWaveSurfer42XsPlugin::enableAwgOutput(U32BIT s, bool v)
+{ if (!m_pLimits->m_bHasAWG) return ScopeError(Enum_Scope_ErrorCode::NOT_SUPPORTED);
+  return sendChecked(s, QByteArray(":WGEN:OUTPut ") + (v ? "ON" : "OFF")); }
+
+ScopeError CWaveSurfer42XsPlugin::readOperationStatus(U32BIT s, U32BIT& o)
+{ FDOUBLE d = 0; ScopeError e = queryDouble(s, QByteArrayLiteral(":OPERegister:CONDition?"), d); o = e.isSuccess() ? static_cast<U32BIT>(d) : 0u; return ScopeError(); }
+ScopeError CWaveSurfer42XsPlugin::readQuestionableStatus(U32BIT s, U32BIT& o)
+{ (void)s; o = 0u; return ScopeError(); }
+ScopeError CWaveSurfer42XsPlugin::getInstrumentErrorCount(U32BIT s, U32BIT& o)
+{ QByteArray r; ScopeError e = queryLine(s, QByteArrayLiteral(":SYSTem:ERRor?"), r); if (!e.isSuccess()) return e;
+  o = r.trimmed().startsWith('0') ? 0u : 1u; return ScopeError(); }
+ScopeError CWaveSurfer42XsPlugin::setRemoteState(U32BIT s, Enum_Scope_RemoteState v)
+{ (void)v; return writeLine(s, QByteArrayLiteral("*OPC")); }
+ScopeError CWaveSurfer42XsPlugin::getRemoteState(U32BIT s, Enum_Scope_RemoteState& o)
+{ (void)s; o = Enum_Scope_RemoteState::m_enumRemote; return ScopeError(); }
+ScopeError CWaveSurfer42XsPlugin::setKeyLock(U32BIT s, bool v) { return sendChecked(s, QByteArray(":SYSTem:LOCK ") + (v ? "ON" : "OFF")); }
+ScopeError CWaveSurfer42XsPlugin::isKeyLocked(U32BIT s, bool& o)
+{ FDOUBLE d = 0; ScopeError e = queryDouble(s, QByteArrayLiteral(":SYSTem:LOCK?"), d); if (e.isSuccess()) o = (d != 0.0); return e; }
+ScopeError CWaveSurfer42XsPlugin::setBeeper(U32BIT s, bool v) { (void)v; return writeLine(s, QByteArrayLiteral("*CLS")); }
