@@ -1,24 +1,43 @@
 # =============================================================================
-#  GuiTester - dark-themed tabbed "Scope Plugin Test" application (Qt Widgets).
+#  GuiTester - the "Scope Plugin Test" application. A dark-themed Qt Widgets
+#  tester with a tab per function group (Connection / Vertical / Horizontal &
+#  Trigger / Acquisition / Waveform / Measurements & Cursors / Save), driving
+#  one instrument through the deliverable CScopeManager API. Plugins are
+#  discovered at runtime. Mirrors the ELoad GuiTester.pro.
 # =============================================================================
 QT       += core gui widgets
-CONFIG   += c++11
-CONFIG   -= app_bundle
 
-TEMPLATE  = app
 TARGET    = GuiTester
-DESTDIR   = ../bin
+TEMPLATE  = app
+CONFIG   += c++11
 
-INCLUDEPATH += ../include ../Common
+DESTDIR   = $$OUT_PWD/../bin
 
-LIBS += -L../lib -lScopeCore
+INCLUDEPATH += ../include
+
+LIBS += -L$$OUT_PWD/../lib -lScopeCore
+unix: QMAKE_RPATHDIR += $$OUT_PWD/../lib
 
 HEADERS += \
+    TesterCommon.h \
     ScopeTesterWindow.h \
     WaveformPlot.h \
-    TesterCommon.h
+    ConnectionTab.h \
+    VerticalTab.h \
+    HorizontalTriggerTab.h \
+    AcquisitionTab.h \
+    WaveformTab.h \
+    MeasurementCursorTab.h \
+    SaveTab.h
 
 SOURCES += \
     main.cpp \
     ScopeTesterWindow.cpp \
-    WaveformPlot.cpp
+    WaveformPlot.cpp \
+    ConnectionTab.cpp \
+    VerticalTab.cpp \
+    HorizontalTriggerTab.cpp \
+    AcquisitionTab.cpp \
+    WaveformTab.cpp \
+    MeasurementCursorTab.cpp \
+    SaveTab.cpp

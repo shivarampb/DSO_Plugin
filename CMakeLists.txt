@@ -75,6 +75,20 @@ add_executable(GuiTester
     GuiTester/main.cpp
     GuiTester/ScopeTesterWindow.cpp
     GuiTester/WaveformPlot.cpp
+    GuiTester/ConnectionTab.cpp
+    GuiTester/VerticalTab.cpp
+    GuiTester/HorizontalTriggerTab.cpp
+    GuiTester/AcquisitionTab.cpp
+    GuiTester/WaveformTab.cpp
+    GuiTester/MeasurementCursorTab.cpp
+    GuiTester/SaveTab.cpp
     GuiTester/ScopeTesterWindow.h
-    GuiTester/WaveformPlot.h)
+    GuiTester/WaveformPlot.h
+    GuiTester/ConnectionTab.h
+    GuiTester/VerticalTab.h
+    GuiTester/HorizontalTriggerTab.h
+    GuiTester/AcquisitionTab.h
+    GuiTester/WaveformTab.h
+    GuiTester/MeasurementCursorTab.h
+    GuiTester/SaveTab.h)
 target_link_libraries(GuiTester PRIVATE Qt5::Core Qt5::Widgets ScopeCore)
