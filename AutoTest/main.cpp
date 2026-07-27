@@ -174,12 +174,21 @@ static void testErrorPaths(CScopeManager& mgr)
               QStringLiteral("vertical scale too large"));
     checkCode(mgr.setVerticalScale(1, 9, 0.1), Enum_Scope_ErrorCode::INVALID_CHANNEL,
               QStringLiteral("invalid channel 9"));
-    // setAwgFunction is not overridden by SimScope -> NOT_SUPPORTED default
-    checkCode(mgr.setAwgFunction(1, QStringLiteral("SIN")), Enum_Scope_ErrorCode::NOT_SUPPORTED,
-              QStringLiteral("un-overridden op returns NOT_SUPPORTED"));
     checkCode(mgr.reset(77), Enum_Scope_ErrorCode::INVALID_SCOPE_NUMBER,
               QStringLiteral("op on non-existent scope"));
     mgr.destroyInstance(1);
+
+    // NOT_SUPPORTED path: a capability-gated op on a model that lacks the feature
+    // (DSO7104B has no built-in generator) returns NOT_SUPPORTED.
+    mgr.createInstance(2, QStringLiteral("SimScope"));
+    S_Scope_ConnectionConfig cfg2; cfg2.setResourceString(QStringLiteral("SIM::DSO7104B"));
+    mgr.connect(2, cfg2);
+    checkCode(mgr.setAwgFunction(2, QStringLiteral("SIN")), Enum_Scope_ErrorCode::NOT_SUPPORTED,
+              QStringLiteral("AWG op on a non-AWG model returns NOT_SUPPORTED"));
+    // an op no model overrides at all still returns the interface default
+    checkCode(mgr.setPodThreshold(2, 1, 1.0), Enum_Scope_ErrorCode::NOT_SUPPORTED,
+              QStringLiteral("digital op on a non-MSO model returns NOT_SUPPORTED"));
+    mgr.destroyInstance(2);
 }
 
 static void testTwoInstances(CScopeManager& mgr)

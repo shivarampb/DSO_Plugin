@@ -143,6 +143,12 @@ ScopeError CSimScopePlugin::connect(U32BIT s, const S_Scope_ConnectionConfig& c)
         d.m_vCoupling.append(Enum_Scope_Coupling::m_enumDC);
         d.m_vProbeAtten.append(10.0);
         d.m_vBwLimit.append(Enum_Scope_BandwidthLimit::m_enumFull);
+        d.m_vVertPosition.append(0.0);
+        d.m_vImpedance.append(Enum_Scope_InputImpedance::m_enum1M);
+        d.m_vInvert.append(false);
+        d.m_vLabel.append(QStringLiteral("CH%1").arg(i + 1));
+        d.m_vUnits.append(QStringLiteral("V"));
+        d.m_vDeskew.append(0.0);
     }
     d.m_bConnected = true;
     m_devices[s] = d;
@@ -762,3 +768,190 @@ ScopeError CSimScopePlugin::queryScpi(U32BIT s, const QString& v, QString& o)
     o = QStringLiteral("0");
     return ScopeError();
 }
+
+/*============================================================================
+ *  Full-API completeness: the remaining interface groups, simulated with
+ *  stored state (getter-backed) or benign success. Range/channel/capability
+ *  checks match the real plugins so behaviour is consistent hardware-free.
+ *==========================================================================*/
+ScopeError CSimScopePlugin::setVerticalPosition(U32BIT s, U32BIT c, FDOUBLE v)
+{ if (!validChannel(dev(s), c)) return ScopeError(Enum_Scope_ErrorCode::INVALID_CHANNEL); dev(s)->m_vVertPosition[c-1] = v; return ScopeError(); }
+ScopeError CSimScopePlugin::getVerticalPosition(U32BIT s, U32BIT c, FDOUBLE& o)
+{ if (!validChannel(dev(s), c)) return ScopeError(Enum_Scope_ErrorCode::INVALID_CHANNEL); o = dev(s)->m_vVertPosition[c-1]; return ScopeError(); }
+ScopeError CSimScopePlugin::setInputImpedance(U32BIT s, U32BIT c, Enum_Scope_InputImpedance v)
+{ if (!validChannel(dev(s), c)) return ScopeError(Enum_Scope_ErrorCode::INVALID_CHANNEL); dev(s)->m_vImpedance[c-1] = v; return ScopeError(); }
+ScopeError CSimScopePlugin::getInputImpedance(U32BIT s, U32BIT c, Enum_Scope_InputImpedance& o)
+{ if (!validChannel(dev(s), c)) return ScopeError(Enum_Scope_ErrorCode::INVALID_CHANNEL); o = dev(s)->m_vImpedance[c-1]; return ScopeError(); }
+ScopeError CSimScopePlugin::setInvert(U32BIT s, U32BIT c, bool v)
+{ if (!validChannel(dev(s), c)) return ScopeError(Enum_Scope_ErrorCode::INVALID_CHANNEL); dev(s)->m_vInvert[c-1] = v; return ScopeError(); }
+ScopeError CSimScopePlugin::getInvert(U32BIT s, U32BIT c, bool& o)
+{ if (!validChannel(dev(s), c)) return ScopeError(Enum_Scope_ErrorCode::INVALID_CHANNEL); o = dev(s)->m_vInvert[c-1]; return ScopeError(); }
+ScopeError CSimScopePlugin::setChannelLabel(U32BIT s, U32BIT c, const QString& v)
+{ if (!validChannel(dev(s), c)) return ScopeError(Enum_Scope_ErrorCode::INVALID_CHANNEL); dev(s)->m_vLabel[c-1] = v; return ScopeError(); }
+ScopeError CSimScopePlugin::getChannelLabel(U32BIT s, U32BIT c, QString& o)
+{ if (!validChannel(dev(s), c)) return ScopeError(Enum_Scope_ErrorCode::INVALID_CHANNEL); o = dev(s)->m_vLabel[c-1]; return ScopeError(); }
+ScopeError CSimScopePlugin::setChannelUnits(U32BIT s, U32BIT c, const QString& v)
+{ if (!validChannel(dev(s), c)) return ScopeError(Enum_Scope_ErrorCode::INVALID_CHANNEL); dev(s)->m_vUnits[c-1] = v; return ScopeError(); }
+ScopeError CSimScopePlugin::getChannelUnits(U32BIT s, U32BIT c, QString& o)
+{ if (!validChannel(dev(s), c)) return ScopeError(Enum_Scope_ErrorCode::INVALID_CHANNEL); o = dev(s)->m_vUnits[c-1]; return ScopeError(); }
+ScopeError CSimScopePlugin::setDeskew(U32BIT s, U32BIT c, FDOUBLE v)
+{ if (!validChannel(dev(s), c)) return ScopeError(Enum_Scope_ErrorCode::INVALID_CHANNEL); dev(s)->m_vDeskew[c-1] = v; return ScopeError(); }
+ScopeError CSimScopePlugin::getDeskew(U32BIT s, U32BIT c, FDOUBLE& o)
+{ if (!validChannel(dev(s), c)) return ScopeError(Enum_Scope_ErrorCode::INVALID_CHANNEL); o = dev(s)->m_vDeskew[c-1]; return ScopeError(); }
+
+ScopeError CSimScopePlugin::setTimebaseReference(U32BIT s, FDOUBLE)
+{ return isConnected(s) ? ScopeError() : ScopeError(Enum_Scope_ErrorCode::NOT_CONNECTED); }
+ScopeError CSimScopePlugin::setTimebaseMode(U32BIT s, Enum_Scope_TimebaseMode v)
+{ S_SimDevice* d = dev(s); if (!d) return ScopeError(Enum_Scope_ErrorCode::NOT_CONNECTED); d->m_eTimebaseMode = v; return ScopeError(); }
+ScopeError CSimScopePlugin::getTimebaseMode(U32BIT s, Enum_Scope_TimebaseMode& o)
+{ S_SimDevice* d = dev(s); if (!d) return ScopeError(Enum_Scope_ErrorCode::NOT_CONNECTED); o = d->m_eTimebaseMode; return ScopeError(); }
+ScopeError CSimScopePlugin::setAcquisitionPoints(U32BIT s, U32BIT v) { return setWaveformPoints(s, v); }
+ScopeError CSimScopePlugin::getAcquisitionPoints(U32BIT s, U32BIT& o)
+{ S_SimDevice* d = dev(s); if (!d) return ScopeError(Enum_Scope_ErrorCode::NOT_CONNECTED); o = static_cast<U32BIT>(d->m_iWfmPoints); return ScopeError(); }
+
+ScopeError CSimScopePlugin::setTriggerCoupling(U32BIT s, Enum_Scope_Coupling v)
+{ S_SimDevice* d = dev(s); if (!d) return ScopeError(Enum_Scope_ErrorCode::NOT_CONNECTED); d->m_eTrigCoupling = v; return ScopeError(); }
+ScopeError CSimScopePlugin::getTriggerCoupling(U32BIT s, Enum_Scope_Coupling& o)
+{ S_SimDevice* d = dev(s); if (!d) return ScopeError(Enum_Scope_ErrorCode::NOT_CONNECTED); o = d->m_eTrigCoupling; return ScopeError(); }
+ScopeError CSimScopePlugin::setTriggerPulseWidth(U32BIT s, FDOUBLE)
+{ return isConnected(s) ? ScopeError() : ScopeError(Enum_Scope_ErrorCode::NOT_CONNECTED); }
+ScopeError CSimScopePlugin::setTriggerVideoStandard(U32BIT s, const QString&)
+{ return isConnected(s) ? ScopeError() : ScopeError(Enum_Scope_ErrorCode::NOT_CONNECTED); }
+ScopeError CSimScopePlugin::setTriggerPattern(U32BIT s, const QString&)
+{ return isConnected(s) ? ScopeError() : ScopeError(Enum_Scope_ErrorCode::NOT_CONNECTED); }
+
+ScopeError CSimScopePlugin::setSegmentedCount(U32BIT s, U32BIT v)
+{ S_SimDevice* d = dev(s); if (!d) return ScopeError(Enum_Scope_ErrorCode::NOT_CONNECTED); d->m_u32SegmentCount = v; return ScopeError(); }
+ScopeError CSimScopePlugin::getSegmentedCount(U32BIT s, U32BIT& o)
+{ S_SimDevice* d = dev(s); if (!d) return ScopeError(Enum_Scope_ErrorCode::NOT_CONNECTED); o = d->m_u32SegmentCount; return ScopeError(); }
+
+ScopeError CSimScopePlugin::setMeasureStatistics(U32BIT s, bool)
+{ return isConnected(s) ? ScopeError() : ScopeError(Enum_Scope_ErrorCode::NOT_CONNECTED); }
+ScopeError CSimScopePlugin::getMeasurementStatistics(U32BIT s, U32BIT c, Enum_Scope_MeasType t, S_Scope_MeasurementResult& o)
+{ return readMeasurement(s, c, t, o); }
+
+ScopeError CSimScopePlugin::setMathOperation(U32BIT s, Enum_Scope_MathOp v)
+{ S_SimDevice* d = dev(s); if (!d) return ScopeError(Enum_Scope_ErrorCode::NOT_CONNECTED); d->m_eMathOp = v; return ScopeError(); }
+ScopeError CSimScopePlugin::setMathSource1(U32BIT s, U32BIT c)
+{ return validChannel(dev(s), c) ? ScopeError() : ScopeError(Enum_Scope_ErrorCode::INVALID_CHANNEL); }
+ScopeError CSimScopePlugin::setMathSource2(U32BIT s, U32BIT c)
+{ return validChannel(dev(s), c) ? ScopeError() : ScopeError(Enum_Scope_ErrorCode::INVALID_CHANNEL); }
+ScopeError CSimScopePlugin::enableMath(U32BIT s, bool)
+{ return isConnected(s) ? ScopeError() : ScopeError(Enum_Scope_ErrorCode::NOT_CONNECTED); }
+ScopeError CSimScopePlugin::setFftWindow(U32BIT s, Enum_Scope_FftWindow v)
+{ S_SimDevice* d = dev(s); if (!d) return ScopeError(Enum_Scope_ErrorCode::NOT_CONNECTED); d->m_eFftWindow = v; return ScopeError(); }
+ScopeError CSimScopePlugin::getFftWindow(U32BIT s, Enum_Scope_FftWindow& o)
+{ S_SimDevice* d = dev(s); if (!d) return ScopeError(Enum_Scope_ErrorCode::NOT_CONNECTED); o = d->m_eFftWindow; return ScopeError(); }
+ScopeError CSimScopePlugin::setFftSpan(U32BIT s, FDOUBLE)   { return isConnected(s) ? ScopeError() : ScopeError(Enum_Scope_ErrorCode::NOT_CONNECTED); }
+ScopeError CSimScopePlugin::setFftCenter(U32BIT s, FDOUBLE) { return isConnected(s) ? ScopeError() : ScopeError(Enum_Scope_ErrorCode::NOT_CONNECTED); }
+ScopeError CSimScopePlugin::setMathScale(U32BIT s, FDOUBLE)    { return isConnected(s) ? ScopeError() : ScopeError(Enum_Scope_ErrorCode::NOT_CONNECTED); }
+ScopeError CSimScopePlugin::setMathPosition(U32BIT s, FDOUBLE) { return isConnected(s) ? ScopeError() : ScopeError(Enum_Scope_ErrorCode::NOT_CONNECTED); }
+
+ScopeError CSimScopePlugin::setCursorType(U32BIT s, Enum_Scope_CursorType v)
+{ S_SimDevice* d = dev(s); if (!d) return ScopeError(Enum_Scope_ErrorCode::NOT_CONNECTED); d->m_eCursorType = v; return ScopeError(); }
+ScopeError CSimScopePlugin::getCursorType(U32BIT s, Enum_Scope_CursorType& o)
+{ S_SimDevice* d = dev(s); if (!d) return ScopeError(Enum_Scope_ErrorCode::NOT_CONNECTED); o = d->m_eCursorType; return ScopeError(); }
+ScopeError CSimScopePlugin::setCursorSource(U32BIT s, U32BIT c)
+{ return validChannel(dev(s), c) ? ScopeError() : ScopeError(Enum_Scope_ErrorCode::INVALID_CHANNEL); }
+ScopeError CSimScopePlugin::setCursorPosition(U32BIT s, U32BIT i, FDOUBLE v)
+{ S_SimDevice* d = dev(s); if (!d) return ScopeError(Enum_Scope_ErrorCode::NOT_CONNECTED);
+  if (i <= 1) d->m_dCursorX1 = v; else d->m_dCursorX2 = v; return ScopeError(); }
+ScopeError CSimScopePlugin::getCursorPosition(U32BIT s, U32BIT i, FDOUBLE& o)
+{ S_SimDevice* d = dev(s); if (!d) return ScopeError(Enum_Scope_ErrorCode::NOT_CONNECTED);
+  o = (i <= 1) ? d->m_dCursorX1 : d->m_dCursorX2; return ScopeError(); }
+ScopeError CSimScopePlugin::readCursorValues(U32BIT s, FDOUBLE& x1, FDOUBLE& x2, FDOUBLE& y1, FDOUBLE& y2)
+{ S_SimDevice* d = dev(s); if (!d) return ScopeError(Enum_Scope_ErrorCode::NOT_CONNECTED);
+  x1 = d->m_dCursorX1; x2 = d->m_dCursorX2; y1 = d->m_dCursorY1; y2 = d->m_dCursorY2; return ScopeError(); }
+
+ScopeError CSimScopePlugin::setPersistence(U32BIT s, FDOUBLE)  { return isConnected(s) ? ScopeError() : ScopeError(Enum_Scope_ErrorCode::NOT_CONNECTED); }
+ScopeError CSimScopePlugin::setGraticule(U32BIT s, const QString&) { return isConnected(s) ? ScopeError() : ScopeError(Enum_Scope_ErrorCode::NOT_CONNECTED); }
+ScopeError CSimScopePlugin::setIntensity(U32BIT s, FDOUBLE)    { return isConnected(s) ? ScopeError() : ScopeError(Enum_Scope_ErrorCode::NOT_CONNECTED); }
+ScopeError CSimScopePlugin::setDisplayFormat(U32BIT s, Enum_Scope_TimebaseMode v) { return setTimebaseMode(s, v); }
+ScopeError CSimScopePlugin::setVectors(U32BIT s, bool)        { return isConnected(s) ? ScopeError() : ScopeError(Enum_Scope_ErrorCode::NOT_CONNECTED); }
+
+ScopeError CSimScopePlugin::saveSetup(U32BIT s, U32BIT)   { return isConnected(s) ? ScopeError() : ScopeError(Enum_Scope_ErrorCode::NOT_CONNECTED); }
+ScopeError CSimScopePlugin::recallSetup(U32BIT s, U32BIT) { return isConnected(s) ? ScopeError() : ScopeError(Enum_Scope_ErrorCode::NOT_CONNECTED); }
+ScopeError CSimScopePlugin::saveWaveformToFile(U32BIT s, U32BIT c, const QString&)
+{ return validChannel(dev(s), c) ? ScopeError() : ScopeError(Enum_Scope_ErrorCode::INVALID_CHANNEL); }
+ScopeError CSimScopePlugin::captureScreenshot(U32BIT s, Enum_Scope_ImageFormat, QByteArray& o)
+{
+    if (!isConnected(s)) return ScopeError(Enum_Scope_ErrorCode::NOT_CONNECTED);
+    static const char* const kPngB64 =
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M8"
+        "AAAMBAQAY3Y2wAAAAAElFTkSuQmCC";
+    o = QByteArray::fromBase64(QByteArray(kPngB64));
+    return ScopeError();
+}
+ScopeError CSimScopePlugin::saveToReference(U32BIT s, U32BIT c, U32BIT)
+{ return validChannel(dev(s), c) ? ScopeError() : ScopeError(Enum_Scope_ErrorCode::INVALID_CHANNEL); }
+ScopeError CSimScopePlugin::displayReference(U32BIT s, U32BIT, bool) { return isConnected(s) ? ScopeError() : ScopeError(Enum_Scope_ErrorCode::NOT_CONNECTED); }
+
+ScopeError CSimScopePlugin::enableDigitalChannel(U32BIT s, U32BIT, bool)
+{ S_SimDevice* d = dev(s); if (!d) return ScopeError(Enum_Scope_ErrorCode::NOT_CONNECTED);
+  return d->m_pLimits->m_bHasDigital ? ScopeError() : ScopeError(Enum_Scope_ErrorCode::NOT_SUPPORTED); }
+ScopeError CSimScopePlugin::setDigitalThreshold(U32BIT s, U32BIT, FDOUBLE)
+{ S_SimDevice* d = dev(s); if (!d) return ScopeError(Enum_Scope_ErrorCode::NOT_CONNECTED);
+  return d->m_pLimits->m_bHasDigital ? ScopeError() : ScopeError(Enum_Scope_ErrorCode::NOT_SUPPORTED); }
+ScopeError CSimScopePlugin::setPodThreshold(U32BIT s, U32BIT, FDOUBLE)
+{ S_SimDevice* d = dev(s); if (!d) return ScopeError(Enum_Scope_ErrorCode::NOT_CONNECTED);
+  return d->m_pLimits->m_bHasDigital ? ScopeError() : ScopeError(Enum_Scope_ErrorCode::NOT_SUPPORTED); }
+ScopeError CSimScopePlugin::enableBus(U32BIT s, U32BIT, bool)
+{ S_SimDevice* d = dev(s); if (!d) return ScopeError(Enum_Scope_ErrorCode::NOT_CONNECTED);
+  return d->m_pLimits->m_bHasSerialDecode ? ScopeError() : ScopeError(Enum_Scope_ErrorCode::NOT_SUPPORTED); }
+ScopeError CSimScopePlugin::setBusType(U32BIT s, U32BIT, const QString&)
+{ S_SimDevice* d = dev(s); if (!d) return ScopeError(Enum_Scope_ErrorCode::NOT_CONNECTED);
+  return d->m_pLimits->m_bHasSerialDecode ? ScopeError() : ScopeError(Enum_Scope_ErrorCode::NOT_SUPPORTED); }
+ScopeError CSimScopePlugin::readBusDecode(U32BIT s, U32BIT, QString& o)
+{ S_SimDevice* d = dev(s); if (!d) return ScopeError(Enum_Scope_ErrorCode::NOT_CONNECTED);
+  if (!d->m_pLimits->m_bHasSerialDecode) return ScopeError(Enum_Scope_ErrorCode::NOT_SUPPORTED);
+  o = QStringLiteral("(no bus data)"); return ScopeError(); }
+
+ScopeError CSimScopePlugin::setAwgFunction(U32BIT s, const QString& v)
+{ S_SimDevice* d = dev(s); if (!d) return ScopeError(Enum_Scope_ErrorCode::NOT_CONNECTED);
+  if (!d->m_pLimits->m_bHasAWG) return ScopeError(Enum_Scope_ErrorCode::NOT_SUPPORTED);
+  d->m_strAwgFunction = v;
+  return ScopeError(); }
+ScopeError CSimScopePlugin::setAwgFrequency(U32BIT s, FDOUBLE v)
+{ S_SimDevice* d = dev(s); if (!d) return ScopeError(Enum_Scope_ErrorCode::NOT_CONNECTED);
+  if (!d->m_pLimits->m_bHasAWG) return ScopeError(Enum_Scope_ErrorCode::NOT_SUPPORTED);
+  if (v < 0.0 || v > d->m_pLimits->m_dAwgFreqMax) return ScopeError(Enum_Scope_ErrorCode::PARAMETER_OUT_OF_RANGE, QStringLiteral("AWG frequency %1 out of range").arg(v));
+  d->m_dAwgFreq = v; return ScopeError(); }
+ScopeError CSimScopePlugin::setAwgAmplitude(U32BIT s, FDOUBLE v)
+{ S_SimDevice* d = dev(s); if (!d) return ScopeError(Enum_Scope_ErrorCode::NOT_CONNECTED);
+  if (!d->m_pLimits->m_bHasAWG) return ScopeError(Enum_Scope_ErrorCode::NOT_SUPPORTED);
+  if (v < 0.0 || v > d->m_pLimits->m_dAwgAmplMax) return ScopeError(Enum_Scope_ErrorCode::PARAMETER_OUT_OF_RANGE, QStringLiteral("AWG amplitude %1 out of range").arg(v));
+  d->m_dAwgAmpl = v; return ScopeError(); }
+ScopeError CSimScopePlugin::setAwgOffset(U32BIT s, FDOUBLE v)
+{ S_SimDevice* d = dev(s); if (!d) return ScopeError(Enum_Scope_ErrorCode::NOT_CONNECTED);
+  if (!d->m_pLimits->m_bHasAWG) return ScopeError(Enum_Scope_ErrorCode::NOT_SUPPORTED);
+  d->m_dAwgOffset = v;
+  return ScopeError(); }
+ScopeError CSimScopePlugin::enableAwgOutput(U32BIT s, bool v)
+{ S_SimDevice* d = dev(s); if (!d) return ScopeError(Enum_Scope_ErrorCode::NOT_CONNECTED);
+  if (!d->m_pLimits->m_bHasAWG) return ScopeError(Enum_Scope_ErrorCode::NOT_SUPPORTED);
+  d->m_bAwgOn = v;
+  return ScopeError(); }
+
+ScopeError CSimScopePlugin::clearStatus(U32BIT s) { return isConnected(s) ? ScopeError() : ScopeError(Enum_Scope_ErrorCode::NOT_CONNECTED); }
+ScopeError CSimScopePlugin::getOptions(U32BIT s, QString& o)
+{ if (!isConnected(s)) return ScopeError(Enum_Scope_ErrorCode::NOT_CONNECTED); o = QStringLiteral("SIM"); return ScopeError(); }
+ScopeError CSimScopePlugin::waitOperationComplete(U32BIT s) { return isConnected(s) ? ScopeError() : ScopeError(Enum_Scope_ErrorCode::NOT_CONNECTED); }
+ScopeError CSimScopePlugin::clearErrorStatus(U32BIT s, U32BIT) { return isConnected(s) ? ScopeError() : ScopeError(Enum_Scope_ErrorCode::NOT_CONNECTED); }
+ScopeError CSimScopePlugin::readStandardEventStatus(U32BIT s, U32BIT& o)
+{ if (!isConnected(s)) return ScopeError(Enum_Scope_ErrorCode::NOT_CONNECTED); o = 0; return ScopeError(); }
+ScopeError CSimScopePlugin::readOperationStatus(U32BIT s, U32BIT& o)
+{ S_SimDevice* d = dev(s); if (!d) return ScopeError(Enum_Scope_ErrorCode::NOT_CONNECTED);
+  o = (d->m_eAcqState == Enum_Scope_AcqState::m_enumRunning) ? 0x10u : 0u; return ScopeError(); }
+ScopeError CSimScopePlugin::readQuestionableStatus(U32BIT s, U32BIT& o)
+{ if (!isConnected(s)) return ScopeError(Enum_Scope_ErrorCode::NOT_CONNECTED); o = 0; return ScopeError(); }
+ScopeError CSimScopePlugin::getInstrumentErrorCount(U32BIT s, U32BIT& o)
+{ if (!isConnected(s)) return ScopeError(Enum_Scope_ErrorCode::NOT_CONNECTED); o = 0; return ScopeError(); }
+ScopeError CSimScopePlugin::setRemoteState(U32BIT s, Enum_Scope_RemoteState v)
+{ S_SimDevice* d = dev(s); if (!d) return ScopeError(Enum_Scope_ErrorCode::NOT_CONNECTED); d->m_eRemote = v; return ScopeError(); }
+ScopeError CSimScopePlugin::getRemoteState(U32BIT s, Enum_Scope_RemoteState& o)
+{ S_SimDevice* d = dev(s); if (!d) return ScopeError(Enum_Scope_ErrorCode::NOT_CONNECTED); o = d->m_eRemote; return ScopeError(); }
+ScopeError CSimScopePlugin::setKeyLock(U32BIT s, bool v)
+{ S_SimDevice* d = dev(s); if (!d) return ScopeError(Enum_Scope_ErrorCode::NOT_CONNECTED); d->m_bKeyLocked = v; return ScopeError(); }
+ScopeError CSimScopePlugin::isKeyLocked(U32BIT s, bool& o)
+{ S_SimDevice* d = dev(s); if (!d) return ScopeError(Enum_Scope_ErrorCode::NOT_CONNECTED); o = d->m_bKeyLocked; return ScopeError(); }
+ScopeError CSimScopePlugin::setBeeper(U32BIT s, bool) { return isConnected(s) ? ScopeError() : ScopeError(Enum_Scope_ErrorCode::NOT_CONNECTED); }

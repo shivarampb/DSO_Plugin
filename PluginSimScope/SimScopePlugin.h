@@ -108,14 +108,111 @@ public:
     ScopeError readWaveform(U32BIT s, U32BIT c, S_Scope_Waveform& o) override;
     ScopeError digitizeChannel(U32BIT s, U32BIT c) override;
 
+    /*==== vertical extras ================================================*/
+    ScopeError setVerticalPosition(U32BIT s, U32BIT c, FDOUBLE v) override;
+    ScopeError getVerticalPosition(U32BIT s, U32BIT c, FDOUBLE& o) override;
+    ScopeError setInputImpedance(U32BIT s, U32BIT c, Enum_Scope_InputImpedance v) override;
+    ScopeError getInputImpedance(U32BIT s, U32BIT c, Enum_Scope_InputImpedance& o) override;
+    ScopeError setInvert(U32BIT s, U32BIT c, bool v) override;
+    ScopeError getInvert(U32BIT s, U32BIT c, bool& o) override;
+    ScopeError setChannelLabel(U32BIT s, U32BIT c, const QString& v) override;
+    ScopeError getChannelLabel(U32BIT s, U32BIT c, QString& o) override;
+    ScopeError setChannelUnits(U32BIT s, U32BIT c, const QString& v) override;
+    ScopeError getChannelUnits(U32BIT s, U32BIT c, QString& o) override;
+    ScopeError setDeskew(U32BIT s, U32BIT c, FDOUBLE v) override;
+    ScopeError getDeskew(U32BIT s, U32BIT c, FDOUBLE& o) override;
+
+    /*==== horizontal extras ==============================================*/
+    ScopeError setTimebaseReference(U32BIT s, FDOUBLE v) override;
+    ScopeError setTimebaseMode(U32BIT s, Enum_Scope_TimebaseMode v) override;
+    ScopeError getTimebaseMode(U32BIT s, Enum_Scope_TimebaseMode& o) override;
+    ScopeError setAcquisitionPoints(U32BIT s, U32BIT v) override;
+    ScopeError getAcquisitionPoints(U32BIT s, U32BIT& o) override;
+
+    /*==== trigger extras =================================================*/
+    ScopeError setTriggerCoupling(U32BIT s, Enum_Scope_Coupling v) override;
+    ScopeError getTriggerCoupling(U32BIT s, Enum_Scope_Coupling& o) override;
+    ScopeError setTriggerPulseWidth(U32BIT s, FDOUBLE v) override;
+    ScopeError setTriggerVideoStandard(U32BIT s, const QString& v) override;
+    ScopeError setTriggerPattern(U32BIT s, const QString& v) override;
+
+    /*==== acquisition extras =============================================*/
+    ScopeError setSegmentedCount(U32BIT s, U32BIT v) override;
+    ScopeError getSegmentedCount(U32BIT s, U32BIT& o) override;
+
     /*==== measurements ===================================================*/
     ScopeError addMeasurement(U32BIT s, U32BIT c, Enum_Scope_MeasType t) override;
     ScopeError readMeasurement(U32BIT s, U32BIT c, Enum_Scope_MeasType t, S_Scope_MeasurementResult& o) override;
     ScopeError clearMeasurements(U32BIT s) override;
+    ScopeError setMeasureStatistics(U32BIT s, bool v) override;
+    ScopeError getMeasurementStatistics(U32BIT s, U32BIT c, Enum_Scope_MeasType t, S_Scope_MeasurementResult& o) override;
 
-    /*==== status =========================================================*/
+    /*==== math / FFT =====================================================*/
+    ScopeError setMathOperation(U32BIT s, Enum_Scope_MathOp v) override;
+    ScopeError setMathSource1(U32BIT s, U32BIT c) override;
+    ScopeError setMathSource2(U32BIT s, U32BIT c) override;
+    ScopeError enableMath(U32BIT s, bool v) override;
+    ScopeError setFftWindow(U32BIT s, Enum_Scope_FftWindow v) override;
+    ScopeError getFftWindow(U32BIT s, Enum_Scope_FftWindow& o) override;
+    ScopeError setFftSpan(U32BIT s, FDOUBLE v) override;
+    ScopeError setFftCenter(U32BIT s, FDOUBLE v) override;
+    ScopeError setMathScale(U32BIT s, FDOUBLE v) override;
+    ScopeError setMathPosition(U32BIT s, FDOUBLE v) override;
+
+    /*==== cursors ========================================================*/
+    ScopeError setCursorType(U32BIT s, Enum_Scope_CursorType v) override;
+    ScopeError getCursorType(U32BIT s, Enum_Scope_CursorType& o) override;
+    ScopeError setCursorSource(U32BIT s, U32BIT c) override;
+    ScopeError setCursorPosition(U32BIT s, U32BIT i, FDOUBLE v) override;
+    ScopeError getCursorPosition(U32BIT s, U32BIT i, FDOUBLE& o) override;
+    ScopeError readCursorValues(U32BIT s, FDOUBLE& x1, FDOUBLE& x2, FDOUBLE& y1, FDOUBLE& y2) override;
+
+    /*==== display ========================================================*/
+    ScopeError setPersistence(U32BIT s, FDOUBLE v) override;
+    ScopeError setGraticule(U32BIT s, const QString& v) override;
+    ScopeError setIntensity(U32BIT s, FDOUBLE v) override;
+    ScopeError setDisplayFormat(U32BIT s, Enum_Scope_TimebaseMode v) override;
+    ScopeError setVectors(U32BIT s, bool v) override;
+
+    /*==== save / recall / screenshot =====================================*/
+    ScopeError saveSetup(U32BIT s, U32BIT loc) override;
+    ScopeError recallSetup(U32BIT s, U32BIT loc) override;
+    ScopeError saveWaveformToFile(U32BIT s, U32BIT c, const QString& path) override;
+    ScopeError captureScreenshot(U32BIT s, Enum_Scope_ImageFormat f, QByteArray& o) override;
+    ScopeError saveToReference(U32BIT s, U32BIT c, U32BIT slot) override;
+    ScopeError displayReference(U32BIT s, U32BIT slot, bool v) override;
+
+    /*==== digital / MSO (gated on capability) ============================*/
+    ScopeError enableDigitalChannel(U32BIT s, U32BIT d, bool v) override;
+    ScopeError setDigitalThreshold(U32BIT s, U32BIT d, FDOUBLE v) override;
+    ScopeError setPodThreshold(U32BIT s, U32BIT p, FDOUBLE v) override;
+    ScopeError enableBus(U32BIT s, U32BIT b, bool v) override;
+    ScopeError setBusType(U32BIT s, U32BIT b, const QString& v) override;
+    ScopeError readBusDecode(U32BIT s, U32BIT b, QString& o) override;
+
+    /*==== AWG (gated on capability) ======================================*/
+    ScopeError setAwgFunction(U32BIT s, const QString& v) override;
+    ScopeError setAwgFrequency(U32BIT s, FDOUBLE v) override;
+    ScopeError setAwgAmplitude(U32BIT s, FDOUBLE v) override;
+    ScopeError setAwgOffset(U32BIT s, FDOUBLE v) override;
+    ScopeError enableAwgOutput(U32BIT s, bool v) override;
+
+    /*==== status / system ================================================*/
+    ScopeError clearStatus(U32BIT s) override;
+    ScopeError getOptions(U32BIT s, QString& o) override;
+    ScopeError waitOperationComplete(U32BIT s) override;
     ScopeError readErrorStatus(U32BIT s, U32BIT c, S_Scope_DeviceErrorStatus& o) override;
+    ScopeError clearErrorStatus(U32BIT s, U32BIT c) override;
     ScopeError readStatusByte(U32BIT s, U32BIT& o) override;
+    ScopeError readStandardEventStatus(U32BIT s, U32BIT& o) override;
+    ScopeError readOperationStatus(U32BIT s, U32BIT& o) override;
+    ScopeError readQuestionableStatus(U32BIT s, U32BIT& o) override;
+    ScopeError getInstrumentErrorCount(U32BIT s, U32BIT& o) override;
+    ScopeError setRemoteState(U32BIT s, Enum_Scope_RemoteState v) override;
+    ScopeError getRemoteState(U32BIT s, Enum_Scope_RemoteState& o) override;
+    ScopeError setKeyLock(U32BIT s, bool v) override;
+    ScopeError isKeyLocked(U32BIT s, bool& o) override;
+    ScopeError setBeeper(U32BIT s, bool v) override;
     ScopeError queryErrorQueue(U32BIT s, QString& o) override;
     ScopeError writeScpi(U32BIT s, const QString& v) override;
     ScopeError queryScpi(U32BIT s, const QString& v, QString& o) override;
@@ -157,6 +254,30 @@ private:
         Enum_Scope_WaveformSource m_eWfmSource;
         int    m_iWfmSourceIndex;
 
+        // per-channel extras (sized to the model's analog channel count)
+        QVector<double>                    m_vVertPosition;
+        QVector<Enum_Scope_InputImpedance> m_vImpedance;
+        QVector<bool>                      m_vInvert;
+        QVector<QString>                   m_vLabel;
+        QVector<QString>                   m_vUnits;
+        QVector<double>                    m_vDeskew;
+
+        Enum_Scope_TimebaseMode  m_eTimebaseMode;
+        U32BIT                   m_u32SegmentCount;
+        Enum_Scope_Coupling      m_eTrigCoupling;
+
+        Enum_Scope_MathOp    m_eMathOp;
+        Enum_Scope_FftWindow m_eFftWindow;
+        Enum_Scope_CursorType m_eCursorType;
+        double m_dCursorX1, m_dCursorX2, m_dCursorY1, m_dCursorY2;
+
+        QString m_strAwgFunction;
+        double  m_dAwgFreq, m_dAwgAmpl, m_dAwgOffset;
+        bool    m_bAwgOn;
+
+        Enum_Scope_RemoteState m_eRemote;
+        bool m_bKeyLocked;
+
         S_SimDevice() : m_bConnected(false), m_pLimits(nullptr)
             , m_eShape(SHAPE_SINE), m_u32Timeout(5000)
             , m_dTimebase(1.0e-6), m_dTimebasePos(0.0), m_u32MemDepth(1000)
@@ -171,6 +292,15 @@ private:
             , m_iWfmPoints(1000)
             , m_eWfmSource(Enum_Scope_WaveformSource::m_enumChannel)
             , m_iWfmSourceIndex(1)
+            , m_eTimebaseMode(Enum_Scope_TimebaseMode::m_enumMain)
+            , m_u32SegmentCount(1)
+            , m_eTrigCoupling(Enum_Scope_Coupling::m_enumDC)
+            , m_eMathOp(Enum_Scope_MathOp::m_enumAdd)
+            , m_eFftWindow(Enum_Scope_FftWindow::m_enumHann)
+            , m_eCursorType(Enum_Scope_CursorType::m_enumOff)
+            , m_dCursorX1(0.0), m_dCursorX2(0.0), m_dCursorY1(0.0), m_dCursorY2(0.0)
+            , m_dAwgFreq(1000.0), m_dAwgAmpl(1.0), m_dAwgOffset(0.0), m_bAwgOn(false)
+            , m_eRemote(Enum_Scope_RemoteState::m_enumRemote), m_bKeyLocked(false)
         {}
     };
 
