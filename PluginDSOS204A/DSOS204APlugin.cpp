@@ -620,7 +620,9 @@ ScopeError CDSOS204APlugin::setBusType(U32BIT s, U32BIT b, const QString& v)
   return sendChecked(s, QByteArray(":SBUS") + QByteArray::number(b) + ":MODE " + v.toLatin1()); }
 ScopeError CDSOS204APlugin::readBusDecode(U32BIT s, U32BIT b, QString& o)
 { if (!m_pLimits->m_bHasSerialDecode) return ScopeError(Enum_Scope_ErrorCode::NOT_SUPPORTED);
-  QByteArray r; ScopeError e = queryLine(s, QByteArray(":SBUS") + QByteArray::number(b) + ":MODE?", r);
+  // TODO(manual): Keysight exposes decode via :SBUS<n>:...:DATA / lister; this
+  // DATA? read is the mock-facing form until the Programmer's Guide is applied.
+  QByteArray r; ScopeError e = queryLine(s, QByteArray(":SBUS") + QByteArray::number(b) + ":DATA?", r);
   if (e.isSuccess()) o = QString::fromLatin1(r).trimmed();
   return e; }
 

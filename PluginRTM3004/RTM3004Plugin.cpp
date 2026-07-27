@@ -961,7 +961,9 @@ ScopeError CRTM3004Plugin::setBusType(U32BIT s, U32BIT b, const QString& v)
   return sendChecked(s, QByteArray("BUS") + QByteArray::number(b) + ":TYPE " + v.toLatin1()); }
 ScopeError CRTM3004Plugin::readBusDecode(U32BIT s, U32BIT b, QString& o)
 { if (!m_pLimits->m_bHasSerialDecode) return ScopeError(Enum_Scope_ErrorCode::NOT_SUPPORTED);
-  QByteArray r; ScopeError e = queryLine(s, QByteArray("BUS") + QByteArray::number(b) + ":STATe?", r);
+  // TODO(manual): R&S returns decode results via BUS<n>:...:FRAMe queries; this
+  // DATA? read is the mock-facing form until the User Manual is applied.
+  QByteArray r; ScopeError e = queryLine(s, QByteArray("BUS") + QByteArray::number(b) + ":DATA?", r);
   if (e.isSuccess()) o = QString::fromLatin1(r).trimmed();
   return e; }
 

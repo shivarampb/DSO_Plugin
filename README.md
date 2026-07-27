@@ -55,6 +55,13 @@ make -j        # (mingw32-make on Windows)
 Outputs land in `build/lib` (core + `libvisa`), `build/plugins` (model DLLs) and
 `build/bin` (testers).
 
+A **CMake** build is provided alongside qmake with the same layout:
+
+```sh
+cmake -S . -B build-cmake && cmake --build build-cmake -j
+LD_LIBRARY_PATH=build-cmake/lib build-cmake/bin/AutoTest build-cmake/plugins
+```
+
 ## Test (zero hardware)
 
 ```sh

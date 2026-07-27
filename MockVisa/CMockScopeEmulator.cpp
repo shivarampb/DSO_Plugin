@@ -44,6 +44,24 @@ void CMockScopeEmulator::pushError(int in_iCode, const char* in_szMessage)
     m_lstErrors.append(qMakePair(in_iCode, QByteArray(in_szMessage)));
 }
 
+/* A plausible decoded-frame readout for the current serial-bus type, so the
+ * readBusDecode() path returns realistic content with no hardware. */
+QByteArray CMockScopeEmulator::busDecodeString() const
+{
+    const QString t = m_strBusType.toUpper();
+    if (t.contains(QStringLiteral("I2C")) || t.contains(QStringLiteral("IIC")))
+        return "I2C: START ADDR 0x50 W ACK DATA 0x12 ACK 0x34 ACK STOP";
+    if (t.contains(QStringLiteral("SPI")))
+        return "SPI: FRAME MOSI 0xA5,0x5A MISO 0x00,0xFF";
+    if (t.contains(QStringLiteral("UART")) || t.contains(QStringLiteral("RS232")) || t.contains(QStringLiteral("SERIAL")))
+        return "UART: 0x48 0x49 0x0D (\"HI\\r\") PARITY OK";
+    if (t.contains(QStringLiteral("CAN")))
+        return "CAN: ID 0x123 DLC 2 DATA 0xDE 0xAD CRC OK ACK";
+    if (t.contains(QStringLiteral("LIN")))
+        return "LIN: ID 0x21 DATA 0xFF 0x01 CHECKSUM OK";
+    return "BUS: (no frames)";
+}
+
 /* Automatic-measurement values derived from the same 3-cycle, 0.4 Vpk sine the
  * waveform block encodes, so measured values are self-consistent with the trace. */
 double CMockScopeEmulator::measurementValue(const QString& in_strType) const
@@ -227,6 +245,18 @@ void CMockScopeEmulator::HandleLine(const QByteArray& in_abyLine, QByteArray& ou
             if (header.contains(QLatin1String(k))) { type = QLatin1String(k); break; }
         }
         out_abyResponse.append(QByteArray::number(measurementValue(type), 'E', 6)).append('\n');
+        return;
+    }
+
+    /*---- serial bus: capture type, synthesize a decoded-frame readout ---*/
+    if (header.contains(QStringLiteral("BUS")) && !isQuery() && !args.isEmpty() &&
+        (header.contains(QStringLiteral("TYPE")) || header.contains(QStringLiteral("MODE")))) {
+        m_strBusType = QString::fromLatin1(args).toUpper();
+        m_mapValues.insert(header, args);
+        return;
+    }
+    if (header.contains(QStringLiteral("BUS")) && isQuery() && header.contains(QStringLiteral("DATA"))) {
+        out_abyResponse.append(busDecodeString()).append('\n');
         return;
     }
 

@@ -491,6 +491,15 @@ static void testFeatureSlicesFor(CScopeManager& mgr, const QString& model)
     else
         checkCode(mgr.enableDigitalChannel(sc, 0, true), Enum_Scope_ErrorCode::NOT_SUPPORTED, QStringLiteral("digital NOT_SUPPORTED (no MSO)"));
 
+    // serial-bus decode (capability-gated): set an I2C bus, read a decoded frame
+    if (caps.m_bHasSerialDecode) {
+        checkOk(mgr.setBusType(sc, 1, QStringLiteral("I2C")), QStringLiteral("setBusType I2C"));
+        checkOk(mgr.enableBus(sc, 1, true), QStringLiteral("enableBus"));
+        QString decode;
+        checkOk(mgr.readBusDecode(sc, 1, decode), QStringLiteral("readBusDecode"));
+        checkTrue(decode.contains(QStringLiteral("I2C")), QStringLiteral("%1 decodes an I2C frame (got '%2')").arg(model, decode));
+    }
+
     // status / keylock
     checkOk(mgr.setKeyLock(sc, true), QStringLiteral("setKeyLock"));
     bool locked = false;

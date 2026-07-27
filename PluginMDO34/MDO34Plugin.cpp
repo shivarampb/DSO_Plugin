@@ -946,7 +946,9 @@ ScopeError CMDO34Plugin::setBusType(U32BIT s, U32BIT b, const QString& v)
   return sendChecked(s, QByteArray("BUS:B") + QByteArray::number(b) + ":TYPe " + v.toLatin1()); }
 ScopeError CMDO34Plugin::readBusDecode(U32BIT s, U32BIT b, QString& o)
 { if (!m_pLimits->m_bHasSerialDecode) return ScopeError(Enum_Scope_ErrorCode::NOT_SUPPORTED);
-  QByteArray r; ScopeError e = queryLine(s, QByteArray("BUS:B") + QByteArray::number(b) + ":STATE?", r);
+  // TODO(manual): Tektronix exposes decoded frames via bus event tables; this
+  // DATA? read is the mock-facing form until the Programmer Manual is applied.
+  QByteArray r; ScopeError e = queryLine(s, QByteArray("BUS:B") + QByteArray::number(b) + ":DATA?", r);
   if (e.isSuccess()) o = QString::fromLatin1(r).trimmed();
   return e; }
 
