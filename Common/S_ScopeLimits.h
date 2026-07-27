@@ -104,7 +104,7 @@ inline const S_ScopeLimits* ScopeLimitsCatalog(int* out_piCount)
     static const S_ScopeLimits s_asCatalog[] = {
         /* MDO34 - Tektronix 3 Series MDO (mixed-domain, MSO opt, AWG opt) */
         { "MDO34", "Tektronix", "3 Series MDO", "MDO3",
-          4, 16, 1.0e9, 2.5e9, 10000000u,
+          4, 16, 1.0e9, 5.0e9, 10000000u,   /* 5 GS/s, 10 M record - verified vs datasheet */
           1.0e-3, 10.0, 100.0,
           4.0e-10, 1000.0,
           0.0, 10.0,
