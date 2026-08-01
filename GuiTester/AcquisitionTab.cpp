@@ -21,7 +21,9 @@ AcquisitionTab::AcquisitionTab(QWidget* parent) : QWidget(parent)
     QFormLayout* f = new QFormLayout(box);
     m_pMode = new QComboBox(box);
     m_pMode->addItems(QStringList() << "Sample" << "PeakDetect" << "Average" << "HiRes" << "Envelope");
-    m_pAvgCount = new QSpinBox(box); m_pAvgCount->setRange(1, 1000000); m_pAvgCount->setValue(16);
+    m_pAvgCount = new QSpinBox(box);
+    m_pAvgCount->setRange(1, 1000000);
+    m_pAvgCount->setValue(16);
     f->addRow(tr("Mode:"), m_pMode);
     f->addRow(tr("Average count:"), m_pAvgCount);
     root->addWidget(box);
@@ -54,25 +56,50 @@ void AcquisitionTab::refreshReadout()
 {
     FDOUBLE sr = 0.0;
     if (CScopeManager::instance().getSampleRate(TESTER_SCOPE, sr).isSuccess())
+    {
         m_pReadout->setText(tr("Sample rate: %1 Sa/s").arg(sr, 0, 'g', 4));
+    }
 }
 
 void AcquisitionTab::onApply()
 {
     CScopeManager& mgr = CScopeManager::instance();
     ScopeError e = mgr.setAcqMode(TESTER_SCOPE, static_cast<Enum_Scope_AcqMode>(m_pMode->currentIndex()));
-    if (e.isSuccess()) e = mgr.setAverageCount(TESTER_SCOPE, static_cast<U32BIT>(m_pAvgCount->value()));
+    if (e.isSuccess())
+    {
+        e = mgr.setAverageCount(TESTER_SCOPE, static_cast<U32BIT>(m_pAvgCount->value()));
+    }
     refreshReadout();
     emit log(e.isSuccess() ? tr("Acquisition applied") : e.toString());
 }
 
-void AcquisitionTab::onRun()    { ScopeError e = CScopeManager::instance().run(TESTER_SCOPE);    refreshReadout(); emit log(e.isSuccess() ? tr("Running")   : e.toString()); }
-void AcquisitionTab::onStop()   { ScopeError e = CScopeManager::instance().stop(TESTER_SCOPE);   emit log(e.isSuccess() ? tr("Stopped")   : e.toString()); }
-void AcquisitionTab::onSingle() { ScopeError e = CScopeManager::instance().single(TESTER_SCOPE); refreshReadout(); emit log(e.isSuccess() ? tr("Single shot") : e.toString()); }
+void AcquisitionTab::onRun()
+{
+    ScopeError e = CScopeManager::instance().run(TESTER_SCOPE);
+    refreshReadout();
+    emit log(e.isSuccess() ? tr("Running") : e.toString());
+}
+void AcquisitionTab::onStop()
+{
+    ScopeError e = CScopeManager::instance().stop(TESTER_SCOPE);
+    emit log(e.isSuccess() ? tr("Stopped") : e.toString());
+}
+void AcquisitionTab::onSingle()
+{
+    ScopeError e = CScopeManager::instance().single(TESTER_SCOPE);
+    refreshReadout();
+    emit log(e.isSuccess() ? tr("Single shot") : e.toString());
+}
 
 void AcquisitionTab::setConnected(bool in_bConnected)
 {
     setEnabled(in_bConnected);
-    if (in_bConnected) refreshReadout();
-    else m_pReadout->setText(tr("Sample rate: —"));
+    if (in_bConnected)
+    {
+        refreshReadout();
+    }
+    else
+    {
+        m_pReadout->setText(tr("Sample rate: —"));
+    }
 }

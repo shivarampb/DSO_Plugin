@@ -28,15 +28,15 @@ class CDSO7104BPlugin : public QObject, public CIScopePlugin
     Q_OBJECT
     Q_PLUGIN_METADATA(IID ScopePlugin_iid)
     Q_INTERFACES(CIScopePlugin)
-public:
+  public:
     CDSO7104BPlugin();
     ~CDSO7104BPlugin() override;
 
-    S_Scope_PluginInfo   getPluginInfo() const override;
+    S_Scope_PluginInfo getPluginInfo() const override;
     S_Scope_Capabilities getCapabilities() const override;
     ScopeError connect(U32BIT s, const S_Scope_ConnectionConfig& c) override;
     ScopeError disconnect(U32BIT s) override;
-    bool       isConnected(U32BIT s) const override;
+    bool isConnected(U32BIT s) const override;
     ScopeError reset(U32BIT s) override;
 
     ScopeError setTimeout(U32BIT s, U32BIT t) override;
@@ -46,7 +46,8 @@ public:
     ScopeError getOptions(U32BIT s, QString& o) override;
     ScopeError waitOperationComplete(U32BIT s) override;
     ScopeError getScpiVersion(U32BIT s, QString& o) override;
-    ScopeError getParameterRange(U32BIT s, U32BIT c, Enum_Scope_ParamId p, S_Scope_ParameterRange& o) override;
+    ScopeError getParameterRange(U32BIT s, U32BIT c, Enum_Scope_ParamId p,
+                                 S_Scope_ParameterRange& o) override;
     ScopeError autoscale(U32BIT s) override;
     ScopeError run(U32BIT s) override;
     ScopeError stop(U32BIT s) override;
@@ -101,10 +102,12 @@ public:
 
     /*==== measurements ===================================================*/
     ScopeError addMeasurement(U32BIT s, U32BIT c, Enum_Scope_MeasType t) override;
-    ScopeError readMeasurement(U32BIT s, U32BIT c, Enum_Scope_MeasType t, S_Scope_MeasurementResult& o) override;
+    ScopeError readMeasurement(U32BIT s, U32BIT c, Enum_Scope_MeasType t,
+                               S_Scope_MeasurementResult& o) override;
     ScopeError clearMeasurements(U32BIT s) override;
     ScopeError setMeasureStatistics(U32BIT s, bool v) override;
-    ScopeError getMeasurementStatistics(U32BIT s, U32BIT c, Enum_Scope_MeasType t, S_Scope_MeasurementResult& o) override;
+    ScopeError getMeasurementStatistics(U32BIT s, U32BIT c, Enum_Scope_MeasType t,
+                                        S_Scope_MeasurementResult& o) override;
 
     /*==== cursors ========================================================*/
     ScopeError setCursorType(U32BIT s, Enum_Scope_CursorType v) override;
@@ -173,17 +176,20 @@ public:
     ScopeError writeScpi(U32BIT s, const QString& v) override;
     ScopeError queryScpi(U32BIT s, const QString& v, QString& o) override;
 
-private:
-    struct S_DeviceInstance {
+  private:
+    struct S_DeviceInstance
+    {
         ViSession m_vi;
         ViSession m_rm;
         S_Scope_ConnectionConfig m_sConfig;
-        bool      m_bConnected;
-        bool      m_bRunning;
-        U32BIT    m_u32Timeout;
-        QString   m_strIdn;
-        S_DeviceInstance() : m_vi(VI_NULL), m_rm(VI_NULL), m_bConnected(false)
-            , m_bRunning(false), m_u32Timeout(5000) {}
+        bool m_bConnected;
+        bool m_bRunning;
+        U32BIT m_u32Timeout;
+        QString m_strIdn;
+        S_DeviceInstance()
+            : m_vi(VI_NULL), m_rm(VI_NULL), m_bConnected(false), m_bRunning(false), m_u32Timeout(5000)
+        {
+        }
     };
 
     S_DeviceInstance* dev(U32BIT s);
@@ -200,9 +206,9 @@ private:
     static QByteArray fmtD(FDOUBLE v);
     static int chanOf(Enum_Scope_TriggerSource e);
 
-    S_ScopeLimits        m_limits;
+    S_ScopeLimits m_limits;
     const S_ScopeLimits* m_pLimits;
-    QString              m_strModel;
+    QString m_strModel;
     QMap<U32BIT, S_DeviceInstance> m_devices;
 };
 

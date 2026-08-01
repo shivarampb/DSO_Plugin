@@ -15,29 +15,29 @@ class QPushButton;
 class AcquisitionTab : public QWidget
 {
     Q_OBJECT
-public:
+  public:
     explicit AcquisitionTab(QWidget* parent = nullptr);
     void setConnected(bool in_bConnected);
 
-signals:
+  signals:
     void log(const QString& in_strText);
 
-private slots:
+  private slots:
     void onApply();
     void onRun();
     void onStop();
     void onSingle();
 
-private:
+  private:
     void refreshReadout();
 
-    QComboBox*   m_pMode;
-    QSpinBox*    m_pAvgCount;
+    QComboBox* m_pMode;
+    QSpinBox* m_pAvgCount;
     QPushButton* m_pRunBtn;
     QPushButton* m_pStopBtn;
     QPushButton* m_pSingleBtn;
     QPushButton* m_pApplyBtn;
-    QLabel*      m_pReadout;
+    QLabel* m_pReadout;
 };
 
 #endif // ACQUISITIONTAB_H

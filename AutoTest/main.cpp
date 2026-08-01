@@ -28,8 +28,15 @@ static int g_iFail = 0;
 
 static void checkTrue(bool in_bCond, const QString& in_strWhat)
 {
-    if (in_bCond) { ++g_iPass; }
-    else { ++g_iFail; std::printf("  [FAIL] %s\n", in_strWhat.toLatin1().constData()); }
+    if (in_bCond)
+    {
+        ++g_iPass;
+    }
+    else
+    {
+        ++g_iFail;
+        std::printf("  [FAIL] %s\n", in_strWhat.toLatin1().constData());
+    }
 }
 
 static void checkOk(const ScopeError& in_e, const QString& in_strWhat)
@@ -39,9 +46,10 @@ static void checkOk(const ScopeError& in_e, const QString& in_strWhat)
 
 static void checkCode(const ScopeError& in_e, Enum_Scope_ErrorCode in_eExpect, const QString& in_strWhat)
 {
-    checkTrue(in_e.code() == in_eExpect,
-              QStringLiteral("%1 expected code %2 got %3")
-              .arg(in_strWhat).arg(static_cast<int>(in_eExpect)).arg(static_cast<int>(in_e.code())));
+    checkTrue(in_e.code() == in_eExpect, QStringLiteral("%1 expected code %2 got %3")
+                                             .arg(in_strWhat)
+                                             .arg(static_cast<int>(in_eExpect))
+                                             .arg(static_cast<int>(in_e.code())));
 }
 
 static bool near(double a, double b, double relTol, double absTol)
@@ -49,7 +57,10 @@ static bool near(double a, double b, double relTol, double absTol)
     return std::fabs(a - b) <= (absTol + relTol * std::fabs(b));
 }
 
-static void section(const char* in_szName) { std::printf("[ %s ]\n", in_szName); }
+static void section(const char* in_szName)
+{
+    std::printf("[ %s ]\n", in_szName);
+}
 
 /*----------------------------------------------------------------------------
  * Test groups
@@ -67,11 +78,12 @@ static void testInstances(CScopeManager& mgr)
     section("Instance management");
     checkOk(mgr.createInstance(1, QStringLiteral("SimScope")), QStringLiteral("createInstance(1)"));
     checkTrue(mgr.instanceExists(1), QStringLiteral("instanceExists(1)"));
-    checkCode(mgr.createInstance(1, QStringLiteral("SimScope")),
-              Enum_Scope_ErrorCode::ALREADY_CONNECTED, QStringLiteral("createInstance dup"));
-    checkCode(mgr.createInstance(2, QStringLiteral("NoSuchModel")),
-              Enum_Scope_ErrorCode::PLUGIN_NOT_FOUND, QStringLiteral("createInstance bad plugin"));
-    checkCode(mgr.reset(99), Enum_Scope_ErrorCode::INVALID_SCOPE_NUMBER, QStringLiteral("op on missing instance"));
+    checkCode(mgr.createInstance(1, QStringLiteral("SimScope")), Enum_Scope_ErrorCode::ALREADY_CONNECTED,
+              QStringLiteral("createInstance dup"));
+    checkCode(mgr.createInstance(2, QStringLiteral("NoSuchModel")), Enum_Scope_ErrorCode::PLUGIN_NOT_FOUND,
+              QStringLiteral("createInstance bad plugin"));
+    checkCode(mgr.reset(99), Enum_Scope_ErrorCode::INVALID_SCOPE_NUMBER,
+              QStringLiteral("op on missing instance"));
     checkOk(mgr.destroyInstance(1), QStringLiteral("destroyInstance(1)"));
     checkTrue(!mgr.instanceExists(1), QStringLiteral("instance gone after destroy"));
 }
@@ -108,15 +120,22 @@ static void testSimApi(CScopeManager& mgr)
 
     // Vpp of a 0.1 V/div sine == 5 * V/div == 0.5 V
     double vmax = wfm.m_vecVolts[0], vmin = wfm.m_vecVolts[0];
-    for (double v : wfm.m_vecVolts) { vmax = std::max(vmax, v); vmin = std::min(vmin, v); }
+    for (double v : wfm.m_vecVolts)
+    {
+        vmax = std::max(vmax, v);
+        vmin = std::min(vmin, v);
+    }
     checkTrue(near(vmax - vmin, 0.5, 0.05, 0.0), QStringLiteral("Vpp ~= 0.5 V (got %1)").arg(vmax - vmin));
 
     S_Scope_MeasurementResult r;
-    checkOk(mgr.readMeasurement(1, 1, Enum_Scope_MeasType::m_enumFrequency, r), QStringLiteral("readMeasurement freq"));
+    checkOk(mgr.readMeasurement(1, 1, Enum_Scope_MeasType::m_enumFrequency, r),
+            QStringLiteral("readMeasurement freq"));
     // 3 cycles across 10 * 100us = 1 ms  ->  3 kHz
-    checkTrue(near(r.m_dValue, 3000.0, 0.1, 0.0), QStringLiteral("frequency ~= 3 kHz (got %1)").arg(r.m_dValue));
+    checkTrue(near(r.m_dValue, 3000.0, 0.1, 0.0),
+              QStringLiteral("frequency ~= 3 kHz (got %1)").arg(r.m_dValue));
 
-    checkOk(mgr.readMeasurement(1, 1, Enum_Scope_MeasType::m_enumVpp, r), QStringLiteral("readMeasurement Vpp"));
+    checkOk(mgr.readMeasurement(1, 1, Enum_Scope_MeasType::m_enumVpp, r),
+            QStringLiteral("readMeasurement Vpp"));
     checkTrue(near(r.m_dValue, 0.5, 0.05, 0.0), QStringLiteral("meas Vpp ~= 0.5 V"));
 
     checkOk(mgr.disconnect(1), QStringLiteral("disconnect"));
@@ -129,21 +148,24 @@ static void testRangeMatrix(CScopeManager& mgr)
 
     // MDO34 has 4 channels -> enabling channel 4 succeeds
     mgr.createInstance(1, QStringLiteral("SimScope"));
-    S_Scope_ConnectionConfig c1; c1.setResourceString(QStringLiteral("SIM::MDO34"));
+    S_Scope_ConnectionConfig c1;
+    c1.setResourceString(QStringLiteral("SIM::MDO34"));
     mgr.connect(1, c1);
     checkOk(mgr.enableChannel(1, 4, true), QStringLiteral("MDO34 enable ch4"));
     // DSOS204A accepts a very fast timebase
     mgr.destroyInstance(1);
 
     mgr.createInstance(2, QStringLiteral("SimScope"));
-    S_Scope_ConnectionConfig c2; c2.setResourceString(QStringLiteral("SIM::DSOS204A"));
+    S_Scope_ConnectionConfig c2;
+    c2.setResourceString(QStringLiteral("SIM::DSOS204A"));
     mgr.connect(2, c2);
     checkOk(mgr.setTimebaseScale(2, 1.0e-10), QStringLiteral("DSOS204A accepts 100 ps/div"));
     mgr.destroyInstance(2);
 
     // DSOX2012A has only 2 channels -> enabling channel 4 is rejected
     mgr.createInstance(3, QStringLiteral("SimScope"));
-    S_Scope_ConnectionConfig c3; c3.setResourceString(QStringLiteral("SIM::DSOX2012A"));
+    S_Scope_ConnectionConfig c3;
+    c3.setResourceString(QStringLiteral("SIM::DSOX2012A"));
     mgr.connect(3, c3);
     checkCode(mgr.enableChannel(3, 4, true), Enum_Scope_ErrorCode::INVALID_CHANNEL,
               QStringLiteral("DSOX2012A rejects ch4"));
@@ -151,7 +173,8 @@ static void testRangeMatrix(CScopeManager& mgr)
 
     // TDS1012B rejects the fast timebase DSOS204A accepts
     mgr.createInstance(4, QStringLiteral("SimScope"));
-    S_Scope_ConnectionConfig c4; c4.setResourceString(QStringLiteral("SIM::TDS1012B"));
+    S_Scope_ConnectionConfig c4;
+    c4.setResourceString(QStringLiteral("SIM::TDS1012B"));
     mgr.connect(4, c4);
     checkCode(mgr.setTimebaseScale(4, 1.0e-10), Enum_Scope_ErrorCode::PARAMETER_OUT_OF_RANGE,
               QStringLiteral("TDS1012B rejects 100 ps/div"));
@@ -167,7 +190,8 @@ static void testErrorPaths(CScopeManager& mgr)
 {
     section("Error paths");
     mgr.createInstance(1, QStringLiteral("SimScope"));
-    S_Scope_ConnectionConfig cfg; cfg.setResourceString(QStringLiteral("SIM::MDO34"));
+    S_Scope_ConnectionConfig cfg;
+    cfg.setResourceString(QStringLiteral("SIM::MDO34"));
     mgr.connect(1, cfg);
 
     checkCode(mgr.setVerticalScale(1, 1, 1.0e6), Enum_Scope_ErrorCode::PARAMETER_OUT_OF_RANGE,
@@ -181,7 +205,8 @@ static void testErrorPaths(CScopeManager& mgr)
     // NOT_SUPPORTED path: a capability-gated op on a model that lacks the feature
     // (DSO7104B has no built-in generator) returns NOT_SUPPORTED.
     mgr.createInstance(2, QStringLiteral("SimScope"));
-    S_Scope_ConnectionConfig cfg2; cfg2.setResourceString(QStringLiteral("SIM::DSO7104B"));
+    S_Scope_ConnectionConfig cfg2;
+    cfg2.setResourceString(QStringLiteral("SIM::DSO7104B"));
     mgr.connect(2, cfg2);
     checkCode(mgr.setAwgFunction(2, QStringLiteral("SIN")), Enum_Scope_ErrorCode::NOT_SUPPORTED,
               QStringLiteral("AWG op on a non-AWG model returns NOT_SUPPORTED"));
@@ -196,8 +221,10 @@ static void testTwoInstances(CScopeManager& mgr)
     section("Two simultaneous instances");
     mgr.createInstance(1, QStringLiteral("SimScope"));
     mgr.createInstance(2, QStringLiteral("SimScope"));
-    S_Scope_ConnectionConfig a; a.setResourceString(QStringLiteral("SIM::MDO34::SINE"));
-    S_Scope_ConnectionConfig b; b.setResourceString(QStringLiteral("SIM::RTM3004::SQUARE"));
+    S_Scope_ConnectionConfig a;
+    a.setResourceString(QStringLiteral("SIM::MDO34::SINE"));
+    S_Scope_ConnectionConfig b;
+    b.setResourceString(QStringLiteral("SIM::RTM3004::SQUARE"));
     checkOk(mgr.connect(1, a), QStringLiteral("connect scope 1"));
     checkOk(mgr.connect(2, b), QStringLiteral("connect scope 2"));
     mgr.setVerticalScale(1, 1, 0.2);
@@ -215,18 +242,28 @@ static void testConcurrency(CScopeManager& mgr)
     section("Two-thread concurrency (different scope numbers)");
     mgr.createInstance(1, QStringLiteral("SimScope"));
     mgr.createInstance(2, QStringLiteral("SimScope"));
-    S_Scope_ConnectionConfig a; a.setResourceString(QStringLiteral("SIM::MDO34"));
-    S_Scope_ConnectionConfig b; b.setResourceString(QStringLiteral("SIM::RTM3004"));
+    S_Scope_ConnectionConfig a;
+    a.setResourceString(QStringLiteral("SIM::MDO34"));
+    S_Scope_ConnectionConfig b;
+    b.setResourceString(QStringLiteral("SIM::RTM3004"));
     mgr.connect(1, a);
     mgr.connect(2, b);
 
     std::atomic<int> iErrors(0);
-    auto worker = [&mgr, &iErrors](U32BIT scope, double scale) {
-        for (int i = 0; i < 2000; ++i) {
-            if (!mgr.setVerticalScale(scope, 1, scale).isSuccess()) { ++iErrors; return; }
+    auto worker = [&mgr, &iErrors](U32BIT scope, double scale)
+    {
+        for (int i = 0; i < 2000; ++i)
+        {
+            if (!mgr.setVerticalScale(scope, 1, scale).isSuccess())
+            {
+                ++iErrors;
+                return;
+            }
             FDOUBLE got = 0.0;
-            if (!mgr.getVerticalScale(scope, 1, got).isSuccess() || !near(got, scale, 0, 1e-9)) {
-                ++iErrors; return;
+            if (!mgr.getVerticalScale(scope, 1, got).isSuccess() || !near(got, scale, 0, 1e-9))
+            {
+                ++iErrors;
+                return;
             }
         }
     };
@@ -251,7 +288,9 @@ static void testMockVisa()
     checkTrue(viOpenDefaultRM(&rm) == VI_SUCCESS, QStringLiteral("viOpenDefaultRM"));
 
     // find resources
-    ViFindList fl = 0; ViUInt32 cnt = 0; char desc[256];
+    ViFindList fl = 0;
+    ViUInt32 cnt = 0;
+    char desc[256];
     checkTrue(viFindRsrc(rm, "?*INSTR", &fl, &cnt, desc) == VI_SUCCESS && cnt >= 2,
               QStringLiteral("viFindRsrc lists mock resources"));
 
@@ -265,17 +304,20 @@ static void testMockVisa()
     ViUInt32 nw = 0;
     const char* idnCmd = "*IDN?\n";
     viWrite(vi, reinterpret_cast<ViConstBuf>(idnCmd), 6, &nw);
-    char rd[512]; ViUInt32 got = 0;
+    char rd[512];
+    ViUInt32 got = 0;
     ViStatus st = viRead(vi, reinterpret_cast<ViBuf>(rd), sizeof(rd), &got);
     QByteArray idn(rd, static_cast<int>(got));
-    checkTrue(st >= VI_SUCCESS && idn.contains("MDO3"), QStringLiteral("mock *IDN? -> ") + QString::fromLatin1(idn.trimmed()));
+    checkTrue(st >= VI_SUCCESS && idn.contains("MDO3"),
+              QStringLiteral("mock *IDN? -> ") + QString::fromLatin1(idn.trimmed()));
 
     // waveform points + preamble + binary block round-trip
     const char* setPts = ":WAV:POIN 500\n";
     viWrite(vi, reinterpret_cast<ViConstBuf>(setPts), static_cast<ViUInt32>(strlen(setPts)), &nw);
     const char* preQ = ":WAV:PRE?\n";
     viWrite(vi, reinterpret_cast<ViConstBuf>(preQ), static_cast<ViUInt32>(strlen(preQ)), &nw);
-    got = 0; st = viRead(vi, reinterpret_cast<ViBuf>(rd), sizeof(rd), &got);
+    got = 0;
+    st = viRead(vi, reinterpret_cast<ViBuf>(rd), sizeof(rd), &got);
     QByteArray pre(rd, static_cast<int>(got));
     const QList<QByteArray> preFields = pre.trimmed().split(',');
     checkTrue(preFields.size() >= 10, QStringLiteral("preamble has 10 fields"));
@@ -288,16 +330,21 @@ static void testMockVisa()
     const char* dataQ = ":WAV:DATA?\n";
     viWrite(vi, reinterpret_cast<ViConstBuf>(dataQ), static_cast<ViUInt32>(strlen(dataQ)), &nw);
     QByteArray block;
-    for (int i = 0; i < 64; ++i) {
+    for (int i = 0; i < 64; ++i)
+    {
         got = 0;
         st = viRead(vi, reinterpret_cast<ViBuf>(rd), sizeof(rd), &got);
         block.append(rd, static_cast<int>(got));
-        if (st != VI_SUCCESS_MAX_CNT) break;
+        if (st != VI_SUCCESS_MAX_CNT)
+        {
+            break;
+        }
     }
     // parse #<w><len><payload>
     bool blockOk = block.size() > 2 && block[0] == '#';
     int payloadLen = 0, hdr = 0;
-    if (blockOk) {
+    if (blockOk)
+    {
         const int w = block[1] - '0';
         payloadLen = block.mid(2, w).toInt();
         hdr = 2 + w;
@@ -307,11 +354,13 @@ static void testMockVisa()
 
     // decode WORD big-endian codes -> volts, check amplitude ~ 0.4 Vpk
     double vmax = -1e9, vmin = 1e9;
-    for (int i = 0; i < payloadLen && hdr + i + 1 < block.size(); i += 2) {
-        const qint16 code = static_cast<qint16>(
-            (static_cast<quint8>(block[hdr + i]) << 8) | static_cast<quint8>(block[hdr + i + 1]));
+    for (int i = 0; i < payloadLen && hdr + i + 1 < block.size(); i += 2)
+    {
+        const qint16 code = static_cast<qint16>((static_cast<quint8>(block[hdr + i]) << 8) |
+                                                static_cast<quint8>(block[hdr + i + 1]));
         const double v = code * yInc;
-        vmax = std::max(vmax, v); vmin = std::min(vmin, v);
+        vmax = std::max(vmax, v);
+        vmin = std::min(vmin, v);
     }
     checkTrue(near(vmax, 0.4, 0.05, 0.0) && near(vmin, -0.4, 0.05, 0.0),
               QStringLiteral("decoded sine amplitude ~= +/-0.4 V (got %1/%2)").arg(vmax).arg(vmin));
@@ -321,19 +370,26 @@ static void testMockVisa()
     const char* shotQ = ":DISP:DATA?\n";
     viWrite(vi, reinterpret_cast<ViConstBuf>(shotQ), static_cast<ViUInt32>(strlen(shotQ)), &nw);
     QByteArray shot;
-    for (int i = 0; i < 8; ++i) {
-        got = 0; st = viRead(vi, reinterpret_cast<ViBuf>(rd), sizeof(rd), &got);
+    for (int i = 0; i < 8; ++i)
+    {
+        got = 0;
+        st = viRead(vi, reinterpret_cast<ViBuf>(rd), sizeof(rd), &got);
         shot.append(rd, static_cast<int>(got));
-        if (st != VI_SUCCESS_MAX_CNT) break;
+        if (st != VI_SUCCESS_MAX_CNT)
+        {
+            break;
+        }
     }
     checkTrue(shot.contains("\x89PNG"), QStringLiteral("screenshot block carries a PNG"));
     viClose(vi);
 
     // forced-timeout resource never answers a read
     ViSession viT = 0;
-    checkTrue(viOpen(rm, "MOCK0::TIMEOUT::INSTR", 0, 0, &viT) == VI_SUCCESS, QStringLiteral("viOpen TIMEOUT"));
+    checkTrue(viOpen(rm, "MOCK0::TIMEOUT::INSTR", 0, 0, &viT) == VI_SUCCESS,
+              QStringLiteral("viOpen TIMEOUT"));
     viWrite(viT, reinterpret_cast<ViConstBuf>(idnCmd), 6, &nw);
-    got = 0; st = viRead(viT, reinterpret_cast<ViBuf>(rd), sizeof(rd), &got);
+    got = 0;
+    st = viRead(viT, reinterpret_cast<ViBuf>(rd), sizeof(rd), &got);
     checkTrue(st == VI_ERROR_TMO, QStringLiteral("timeout resource returns VI_ERROR_TMO"));
     viClose(viT);
     viClose(rm);
@@ -347,13 +403,15 @@ static void testRealModel(CScopeManager& mgr, const QString& model, const QStrin
                           int analogChannels)
 {
     section(QStringLiteral("Real model %1 via MockVisa").arg(model).toLatin1().constData());
-    if (!mgr.getAvailablePlugins().contains(model)) {
+    if (!mgr.getAvailablePlugins().contains(model))
+    {
         std::printf("  [SKIP] %s plugin not discovered\n", model.toLatin1().constData());
         return;
     }
     const U32BIT scope = 10;
     checkOk(mgr.createInstance(scope, model), QStringLiteral("createInstance %1").arg(model));
-    S_Scope_ConnectionConfig cfg; cfg.setResourceString(resource);
+    S_Scope_ConnectionConfig cfg;
+    cfg.setResourceString(resource);
     checkOk(mgr.connect(scope, cfg), QStringLiteral("connect %1").arg(resource));
     checkTrue(mgr.isConnected(scope), QStringLiteral("isConnected"));
 
@@ -364,10 +422,14 @@ static void testRealModel(CScopeManager& mgr, const QString& model, const QStrin
     checkOk(mgr.enableChannel(scope, 1, true), QStringLiteral("enableChannel 1"));
     // channel-count matrix: a channel beyond this model's count is rejected
     if (analogChannels < 4)
+    {
         checkCode(mgr.enableChannel(scope, 4, true), Enum_Scope_ErrorCode::INVALID_CHANNEL,
                   QStringLiteral("%1 (%2ch) rejects ch4").arg(model).arg(analogChannels));
+    }
     else
+    {
         checkOk(mgr.enableChannel(scope, 4, true), QStringLiteral("%1 accepts ch4").arg(model));
+    }
     checkOk(mgr.setVerticalScale(scope, 1, 0.2), QStringLiteral("setVerticalScale"));
     FDOUBLE vs = 0.0;
     checkOk(mgr.getVerticalScale(scope, 1, vs), QStringLiteral("getVerticalScale"));
@@ -376,8 +438,10 @@ static void testRealModel(CScopeManager& mgr, const QString& model, const QStrin
               QStringLiteral("out-of-range vertical scale rejected locally"));
 
     checkOk(mgr.setTimebaseScale(scope, 1.0e-6), QStringLiteral("setTimebaseScale"));
-    checkOk(mgr.setTriggerSource(scope, Enum_Scope_TriggerSource::m_enumCh1), QStringLiteral("setTriggerSource"));
-    checkOk(mgr.setTriggerSlope(scope, Enum_Scope_TriggerSlope::m_enumRising), QStringLiteral("setTriggerSlope"));
+    checkOk(mgr.setTriggerSource(scope, Enum_Scope_TriggerSource::m_enumCh1),
+            QStringLiteral("setTriggerSource"));
+    checkOk(mgr.setTriggerSlope(scope, Enum_Scope_TriggerSlope::m_enumRising),
+            QStringLiteral("setTriggerSlope"));
     checkOk(mgr.setTriggerLevel(scope, 1, 0.1), QStringLiteral("setTriggerLevel"));
     checkOk(mgr.setAcqMode(scope, Enum_Scope_AcqMode::m_enumSample), QStringLiteral("setAcqMode"));
     checkOk(mgr.single(scope), QStringLiteral("single"));
@@ -386,11 +450,17 @@ static void testRealModel(CScopeManager& mgr, const QString& model, const QStrin
     checkOk(mgr.setWaveformPoints(scope, 500), QStringLiteral("setWaveformPoints 500"));
     S_Scope_Waveform wfm;
     checkOk(mgr.readWaveform(scope, 1, wfm), QStringLiteral("readWaveform"));
-    checkTrue(wfm.pointCount() == 500, QStringLiteral("waveform reflects 500 points (got %1)").arg(wfm.pointCount()));
+    checkTrue(wfm.pointCount() == 500,
+              QStringLiteral("waveform reflects 500 points (got %1)").arg(wfm.pointCount()));
     double vmax = -1e9, vmin = 1e9;
-    for (double v : wfm.m_vecVolts) { vmax = std::max(vmax, v); vmin = std::min(vmin, v); }
+    for (double v : wfm.m_vecVolts)
+    {
+        vmax = std::max(vmax, v);
+        vmin = std::min(vmin, v);
+    }
     // mock synth sine is 0.4 Vpk (Vpp 0.8), independent of V/div
-    checkTrue(near(vmax - vmin, 0.8, 0.05, 0.0), QStringLiteral("decoded Vpp ~= 0.8 V (got %1)").arg(vmax - vmin));
+    checkTrue(near(vmax - vmin, 0.8, 0.05, 0.0),
+              QStringLiteral("decoded Vpp ~= 0.8 V (got %1)").arg(vmax - vmin));
     checkTrue(wfm.m_sPreamble.m_dXIncrement > 0.0, QStringLiteral("preamble xIncrement > 0"));
 
     // status + screenshot
@@ -409,13 +479,17 @@ static void testRealModel(CScopeManager& mgr, const QString& model, const QStrin
 static void testRealModels(CScopeManager& mgr)
 {
     // model, analog channel count (drives the channel-count matrix check)
-    struct Row { const char* model; int ch; };
-    static const Row rows[] = {
-        { "MDO34", 4 }, { "RTM3004", 4 }, { "DSO7104B", 4 }, { "DSOS204A", 4 },
-        { "DSOX2012A", 2 }, { "MSO6054A", 4 }, { "RTO2064", 4 },
-        { "TDS1012B", 2 }, { "TDS2024C", 4 }, { "WaveSurfer42Xs", 4 },
+    struct Row
+    {
+        const char* model;
+        int ch;
     };
-    for (const Row& r : rows) {
+    static const Row rows[] = {
+        {"MDO34", 4},    {"RTM3004", 4}, {"DSO7104B", 4}, {"DSOS204A", 4}, {"DSOX2012A", 2},
+        {"MSO6054A", 4}, {"RTO2064", 4}, {"TDS1012B", 2}, {"TDS2024C", 4}, {"WaveSurfer42Xs", 4},
+    };
+    for (const Row& r : rows)
+    {
         const QString model = QString::fromLatin1(r.model);
         testRealModel(mgr, model, QStringLiteral("MOCK0::%1::INSTR").arg(model), r.ch);
     }
@@ -429,22 +503,36 @@ static void testRealModels(CScopeManager& mgr)
 static void testFeatureSlicesFor(CScopeManager& mgr, const QString& model)
 {
     section(QStringLiteral("M5 feature slices: %1").arg(model).toLatin1().constData());
-    if (!mgr.getAvailablePlugins().contains(model)) { std::printf("  [SKIP] %s\n", model.toLatin1().constData()); return; }
+    if (!mgr.getAvailablePlugins().contains(model))
+    {
+        std::printf("  [SKIP] %s\n", model.toLatin1().constData());
+        return;
+    }
     const U32BIT sc = 12;
-    if (mgr.instanceExists(sc)) mgr.destroyInstance(sc);
+    if (mgr.instanceExists(sc))
+    {
+        mgr.destroyInstance(sc);
+    }
     checkOk(mgr.createInstance(sc, model), QStringLiteral("createInstance"));
-    S_Scope_ConnectionConfig cfg; cfg.setResourceString(QStringLiteral("MOCK0::%1::INSTR").arg(model));
+    S_Scope_ConnectionConfig cfg;
+    cfg.setResourceString(QStringLiteral("MOCK0::%1::INSTR").arg(model));
     checkOk(mgr.connect(sc, cfg), QStringLiteral("connect"));
     mgr.enableChannel(sc, 1, true);
 
     // measurements (default 1000 pts -> 3 kHz, 0.8 Vpp, 0.4 Vmax)
     S_Scope_MeasurementResult r;
-    checkOk(mgr.addMeasurement(sc, 1, Enum_Scope_MeasType::m_enumFrequency), QStringLiteral("addMeasurement"));
-    checkOk(mgr.readMeasurement(sc, 1, Enum_Scope_MeasType::m_enumFrequency, r), QStringLiteral("readMeasurement freq"));
-    checkTrue(near(r.m_dValue, 3000.0, 0.02, 0.0), QStringLiteral("%1 freq ~= 3kHz (got %2)").arg(model).arg(r.m_dValue));
-    checkOk(mgr.readMeasurement(sc, 1, Enum_Scope_MeasType::m_enumVpp, r), QStringLiteral("readMeasurement Vpp"));
-    checkTrue(near(r.m_dValue, 0.8, 0.02, 0.0), QStringLiteral("%1 Vpp ~= 0.8 (got %2)").arg(model).arg(r.m_dValue));
-    checkOk(mgr.readMeasurement(sc, 1, Enum_Scope_MeasType::m_enumVmax, r), QStringLiteral("readMeasurement Vmax"));
+    checkOk(mgr.addMeasurement(sc, 1, Enum_Scope_MeasType::m_enumFrequency),
+            QStringLiteral("addMeasurement"));
+    checkOk(mgr.readMeasurement(sc, 1, Enum_Scope_MeasType::m_enumFrequency, r),
+            QStringLiteral("readMeasurement freq"));
+    checkTrue(near(r.m_dValue, 3000.0, 0.02, 0.0),
+              QStringLiteral("%1 freq ~= 3kHz (got %2)").arg(model).arg(r.m_dValue));
+    checkOk(mgr.readMeasurement(sc, 1, Enum_Scope_MeasType::m_enumVpp, r),
+            QStringLiteral("readMeasurement Vpp"));
+    checkTrue(near(r.m_dValue, 0.8, 0.02, 0.0),
+              QStringLiteral("%1 Vpp ~= 0.8 (got %2)").arg(model).arg(r.m_dValue));
+    checkOk(mgr.readMeasurement(sc, 1, Enum_Scope_MeasType::m_enumVmax, r),
+            QStringLiteral("readMeasurement Vmax"));
     checkTrue(near(r.m_dValue, 0.4, 0.02, 0.0), QStringLiteral("%1 Vmax ~= 0.4").arg(model));
     checkOk(mgr.setMeasureStatistics(sc, true), QStringLiteral("setMeasureStatistics"));
     checkOk(mgr.clearMeasurements(sc), QStringLiteral("clearMeasurements"));
@@ -466,38 +554,52 @@ static void testFeatureSlicesFor(CScopeManager& mgr, const QString& model)
     checkTrue(fw == Enum_Scope_FftWindow::m_enumHann, QStringLiteral("FFT window round-trips"));
 
     // display + save/recall + screenshot
-    checkOk(mgr.setDisplayFormat(sc, Enum_Scope_TimebaseMode::m_enumMain), QStringLiteral("setDisplayFormat"));
+    checkOk(mgr.setDisplayFormat(sc, Enum_Scope_TimebaseMode::m_enumMain),
+            QStringLiteral("setDisplayFormat"));
     checkOk(mgr.setVectors(sc, true), QStringLiteral("setVectors"));
     checkOk(mgr.saveSetup(sc, 1), QStringLiteral("saveSetup"));
     checkOk(mgr.recallSetup(sc, 1), QStringLiteral("recallSetup"));
     QByteArray png;
-    checkOk(mgr.captureScreenshot(sc, Enum_Scope_ImageFormat::m_enumPng, png), QStringLiteral("captureScreenshot"));
+    checkOk(mgr.captureScreenshot(sc, Enum_Scope_ImageFormat::m_enumPng, png),
+            QStringLiteral("captureScreenshot"));
     checkTrue(png.contains("\x89PNG"), QStringLiteral("screenshot is a PNG"));
 
     // AWG (capability-gated)
     S_Scope_Capabilities caps = mgr.getCapabilities(sc);
-    if (caps.m_bHasAWG) {
+    if (caps.m_bHasAWG)
+    {
         checkOk(mgr.setAwgFunction(sc, QStringLiteral("SINE")), QStringLiteral("setAwgFunction"));
         checkOk(mgr.setAwgFrequency(sc, 1000.0), QStringLiteral("setAwgFrequency in-range"));
-        checkCode(mgr.setAwgFrequency(sc, 1e12), Enum_Scope_ErrorCode::PARAMETER_OUT_OF_RANGE, QStringLiteral("AWG freq out-of-range rejected"));
+        checkCode(mgr.setAwgFrequency(sc, 1e12), Enum_Scope_ErrorCode::PARAMETER_OUT_OF_RANGE,
+                  QStringLiteral("AWG freq out-of-range rejected"));
         checkOk(mgr.enableAwgOutput(sc, true), QStringLiteral("enableAwgOutput"));
-    } else {
-        checkCode(mgr.setAwgFrequency(sc, 1000.0), Enum_Scope_ErrorCode::NOT_SUPPORTED, QStringLiteral("AWG NOT_SUPPORTED (no generator)"));
+    }
+    else
+    {
+        checkCode(mgr.setAwgFrequency(sc, 1000.0), Enum_Scope_ErrorCode::NOT_SUPPORTED,
+                  QStringLiteral("AWG NOT_SUPPORTED (no generator)"));
     }
 
     // digital (capability-gated)
     if (caps.m_bHasDigital)
+    {
         checkOk(mgr.enableDigitalChannel(sc, 0, true), QStringLiteral("enableDigitalChannel"));
+    }
     else
-        checkCode(mgr.enableDigitalChannel(sc, 0, true), Enum_Scope_ErrorCode::NOT_SUPPORTED, QStringLiteral("digital NOT_SUPPORTED (no MSO)"));
+    {
+        checkCode(mgr.enableDigitalChannel(sc, 0, true), Enum_Scope_ErrorCode::NOT_SUPPORTED,
+                  QStringLiteral("digital NOT_SUPPORTED (no MSO)"));
+    }
 
     // serial-bus decode (capability-gated): set an I2C bus, read a decoded frame
-    if (caps.m_bHasSerialDecode) {
+    if (caps.m_bHasSerialDecode)
+    {
         checkOk(mgr.setBusType(sc, 1, QStringLiteral("I2C")), QStringLiteral("setBusType I2C"));
         checkOk(mgr.enableBus(sc, 1, true), QStringLiteral("enableBus"));
         QString decode;
         checkOk(mgr.readBusDecode(sc, 1, decode), QStringLiteral("readBusDecode"));
-        checkTrue(decode.contains(QStringLiteral("I2C")), QStringLiteral("%1 decodes an I2C frame (got '%2')").arg(model, decode));
+        checkTrue(decode.contains(QStringLiteral("I2C")),
+                  QStringLiteral("%1 decodes an I2C frame (got '%2')").arg(model, decode));
     }
 
     // status / keylock
@@ -513,10 +615,10 @@ static void testFeatureSlicesFor(CScopeManager& mgr, const QString& model)
 
 static void testFeatureSlices(CScopeManager& mgr)
 {
-    testFeatureSlicesFor(mgr, QStringLiteral("MDO34"));      // Tektronix
-    testFeatureSlicesFor(mgr, QStringLiteral("RTM3004"));    // R&S
-    testFeatureSlicesFor(mgr, QStringLiteral("DSOX2012A"));  // Keysight (2ch, no digital)
-    testFeatureSlicesFor(mgr, QStringLiteral("MSO6054A"));   // Keysight MSO (digital, no AWG)
+    testFeatureSlicesFor(mgr, QStringLiteral("MDO34"));     // Tektronix
+    testFeatureSlicesFor(mgr, QStringLiteral("RTM3004"));   // R&S
+    testFeatureSlicesFor(mgr, QStringLiteral("DSOX2012A")); // Keysight (2ch, no digital)
+    testFeatureSlicesFor(mgr, QStringLiteral("MSO6054A"));  // Keysight MSO (digital, no AWG)
 }
 
 /*----------------------------------------------------------------------------
@@ -527,32 +629,48 @@ static void testFeatureSlices(CScopeManager& mgr)
 static void testParity(CScopeManager& mgr)
 {
     section("M7 SimScope/MockVisa parity (getParameterRange + waveform)");
-    static const char* models[] = { "MDO34","RTM3004","DSO7104B","DSOS204A","DSOX2012A",
-                                     "MSO6054A","RTO2064","TDS1012B","TDS2024C","WaveSurfer42Xs" };
-    for (const char* m : models) {
+    static const char* models[] = {"MDO34",    "RTM3004", "DSO7104B", "DSOS204A", "DSOX2012A",
+                                   "MSO6054A", "RTO2064", "TDS1012B", "TDS2024C", "WaveSurfer42Xs"};
+    for (const char* m : models)
+    {
         const QString model = QString::fromLatin1(m);
-        if (!mgr.getAvailablePlugins().contains(model)) continue;
+        if (!mgr.getAvailablePlugins().contains(model))
+        {
+            continue;
+        }
         const U32BIT simN = 20, realN = 21;
-        if (mgr.instanceExists(simN)) mgr.destroyInstance(simN);
-        if (mgr.instanceExists(realN)) mgr.destroyInstance(realN);
+        if (mgr.instanceExists(simN))
+        {
+            mgr.destroyInstance(simN);
+        }
+        if (mgr.instanceExists(realN))
+        {
+            mgr.destroyInstance(realN);
+        }
         mgr.createInstance(simN, QStringLiteral("SimScope"));
         mgr.createInstance(realN, model);
-        S_Scope_ConnectionConfig cs; cs.setResourceString(QStringLiteral("SIM::%1").arg(model));
-        S_Scope_ConnectionConfig cr; cr.setResourceString(QStringLiteral("MOCK0::%1::INSTR").arg(model));
+        S_Scope_ConnectionConfig cs;
+        cs.setResourceString(QStringLiteral("SIM::%1").arg(model));
+        S_Scope_ConnectionConfig cr;
+        cr.setResourceString(QStringLiteral("MOCK0::%1::INSTR").arg(model));
         const bool okS = mgr.connect(simN, cs).isSuccess();
         const bool okR = mgr.connect(realN, cr).isSuccess();
         checkTrue(okS && okR, QStringLiteral("%1: both Sim and real connect").arg(model));
-        if (okS && okR) {
+        if (okS && okR)
+        {
             const Enum_Scope_ParamId params[] = {
                 Enum_Scope_ParamId::m_enumVerticalScale, Enum_Scope_ParamId::m_enumTimebaseScale,
-                Enum_Scope_ParamId::m_enumVerticalOffset, Enum_Scope_ParamId::m_enumAverageCount };
+                Enum_Scope_ParamId::m_enumVerticalOffset, Enum_Scope_ParamId::m_enumAverageCount};
             bool parity = true;
-            for (Enum_Scope_ParamId p : params) {
+            for (Enum_Scope_ParamId p : params)
+            {
                 S_Scope_ParameterRange rs, rr;
                 mgr.getParameterRange(simN, 1, p, rs);
                 mgr.getParameterRange(realN, 1, p, rr);
                 if (!near(rs.m_dMin, rr.m_dMin, 0.0, 1e-9) || !near(rs.m_dMax, rr.m_dMax, 0.0, 1e-9))
+                {
                     parity = false;
+                }
             }
             checkTrue(parity, QStringLiteral("%1: getParameterRange parity Sim vs real").arg(model));
 
@@ -571,8 +689,7 @@ static void testParity(CScopeManager& mgr)
 int main(int argc, char** argv)
 {
     QCoreApplication app(argc, argv);
-    const QString strPluginDir = (argc > 1) ? QString::fromLocal8Bit(argv[1])
-                                             : QStringLiteral("plugins");
+    const QString strPluginDir = (argc > 1) ? QString::fromLocal8Bit(argv[1]) : QStringLiteral("plugins");
 
     std::printf("=== Scope framework AutoTest ===\n");
     std::printf("plugin dir: %s\n", strPluginDir.toLatin1().constData());

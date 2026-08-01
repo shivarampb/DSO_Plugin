@@ -22,29 +22,29 @@ class SaveTab;
 class ScopeTesterWindow : public QMainWindow
 {
     Q_OBJECT
-public:
+  public:
     explicit ScopeTesterWindow(const QString& in_strPluginDir, QWidget* parent = nullptr);
 
-    int runSmokeTest();                           // offscreen CI self-test; 0 on success
-    int screenshotTo(const QString& in_strPath);  // connect + render to an image
+    int runSmokeTest();                          // offscreen CI self-test; 0 on success
+    int screenshotTo(const QString& in_strPath); // connect + render to an image
 
-private slots:
+  private slots:
     void onConnected(const QString& in_strModel);
     void onDisconnected();
     void onLog(const QString& in_strText);
 
-private:
+  private:
     void setOperationTabsEnabled(bool in_bEnabled);
 
-    QTabWidget*           m_pTabs;
-    QLabel*               m_pStatus;
-    ConnectionTab*        m_pConnection;
-    VerticalTab*          m_pVertical;
+    QTabWidget* m_pTabs;
+    QLabel* m_pStatus;
+    ConnectionTab* m_pConnection;
+    VerticalTab* m_pVertical;
     HorizontalTriggerTab* m_pHorizontal;
-    AcquisitionTab*       m_pAcquisition;
-    WaveformTab*          m_pWaveform;
+    AcquisitionTab* m_pAcquisition;
+    WaveformTab* m_pWaveform;
     MeasurementCursorTab* m_pMeasurement;
-    SaveTab*              m_pSave;
+    SaveTab* m_pSave;
 };
 
 #endif // SCOPETESTERWINDOW_H

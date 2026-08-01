@@ -1,0 +1,24 @@
+# MISRA C++:2023-aligned formatting for the Scope framework.
+# Allman braces on their own line; braces inserted around every control
+# sub-statement (no unbraced if/for/while); short bodies expanded.
+Language:        Cpp
+Standard:        c++11
+BasedOnStyle:    LLVM
+IndentWidth:     4
+TabWidth:        4
+UseTab:          Never
+ColumnLimit:     110
+BreakBeforeBraces: Allman
+InsertBraces:    true
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: None
+AllowShortBlocksOnASingleLine: Never
+AllowShortCaseLabelsOnASingleLine: false
+FixNamespaceComments: true
+PointerAlignment: Left
+SpaceBeforeParens: ControlStatements
+KeepEmptyLinesAtTheStartOfBlocks: false
+SortIncludes: false
+AlignAfterOpenBracket: Align
+AlignTrailingComments: true

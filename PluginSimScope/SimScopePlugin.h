@@ -29,16 +29,16 @@ class CSimScopePlugin : public QObject, public CIScopePlugin
     Q_OBJECT
     Q_PLUGIN_METADATA(IID ScopePlugin_iid)
     Q_INTERFACES(CIScopePlugin)
-public:
+  public:
     CSimScopePlugin();
     ~CSimScopePlugin() override;
 
     /*==== mandatory ======================================================*/
-    S_Scope_PluginInfo   getPluginInfo() const override;
+    S_Scope_PluginInfo getPluginInfo() const override;
     S_Scope_Capabilities getCapabilities() const override;
     ScopeError connect(U32BIT s, const S_Scope_ConnectionConfig& c) override;
     ScopeError disconnect(U32BIT s) override;
-    bool       isConnected(U32BIT s) const override;
+    bool isConnected(U32BIT s) const override;
     ScopeError reset(U32BIT s) override;
 
     /*==== core ===========================================================*/
@@ -46,7 +46,8 @@ public:
     ScopeError getIdentification(U32BIT s, QString& o) override;
     ScopeError selfTest(U32BIT s, S32BIT& o) override;
     ScopeError getScpiVersion(U32BIT s, QString& o) override;
-    ScopeError getParameterRange(U32BIT s, U32BIT c, Enum_Scope_ParamId p, S_Scope_ParameterRange& o) override;
+    ScopeError getParameterRange(U32BIT s, U32BIT c, Enum_Scope_ParamId p,
+                                 S_Scope_ParameterRange& o) override;
     ScopeError autoscale(U32BIT s) override;
     ScopeError run(U32BIT s) override;
     ScopeError stop(U32BIT s) override;
@@ -142,10 +143,12 @@ public:
 
     /*==== measurements ===================================================*/
     ScopeError addMeasurement(U32BIT s, U32BIT c, Enum_Scope_MeasType t) override;
-    ScopeError readMeasurement(U32BIT s, U32BIT c, Enum_Scope_MeasType t, S_Scope_MeasurementResult& o) override;
+    ScopeError readMeasurement(U32BIT s, U32BIT c, Enum_Scope_MeasType t,
+                               S_Scope_MeasurementResult& o) override;
     ScopeError clearMeasurements(U32BIT s) override;
     ScopeError setMeasureStatistics(U32BIT s, bool v) override;
-    ScopeError getMeasurementStatistics(U32BIT s, U32BIT c, Enum_Scope_MeasType t, S_Scope_MeasurementResult& o) override;
+    ScopeError getMeasurementStatistics(U32BIT s, U32BIT c, Enum_Scope_MeasType t,
+                                        S_Scope_MeasurementResult& o) override;
 
     /*==== math / FFT =====================================================*/
     ScopeError setMathOperation(U32BIT s, Enum_Scope_MathOp v) override;
@@ -217,99 +220,101 @@ public:
     ScopeError writeScpi(U32BIT s, const QString& v) override;
     ScopeError queryScpi(U32BIT s, const QString& v, QString& o) override;
 
-private:
-    enum EWaveShape { SHAPE_SINE, SHAPE_SQUARE, SHAPE_RAMP, SHAPE_NOISE };
+  private:
+    enum EWaveShape
+    {
+        SHAPE_SINE,
+        SHAPE_SQUARE,
+        SHAPE_RAMP,
+        SHAPE_NOISE
+    };
 
-    struct S_SimDevice {
-        bool                 m_bConnected;
+    struct S_SimDevice
+    {
+        bool m_bConnected;
         const S_ScopeLimits* m_pLimits;
-        QString              m_strModel;
-        EWaveShape           m_eShape;
-        U32BIT               m_u32Timeout;
+        QString m_strModel;
+        EWaveShape m_eShape;
+        U32BIT m_u32Timeout;
 
-        QVector<bool>                 m_vChEnabled;
-        QVector<double>               m_vVertScale;   // V/div
-        QVector<double>               m_vVertOffset;  // V
-        QVector<Enum_Scope_Coupling>  m_vCoupling;
-        QVector<double>               m_vProbeAtten;
+        QVector<bool> m_vChEnabled;
+        QVector<double> m_vVertScale;  // V/div
+        QVector<double> m_vVertOffset; // V
+        QVector<Enum_Scope_Coupling> m_vCoupling;
+        QVector<double> m_vProbeAtten;
         QVector<Enum_Scope_BandwidthLimit> m_vBwLimit;
 
-        double m_dTimebase;      // s/div
-        double m_dTimebasePos;   // s
-        unsigned m_u32MemDepth;  // points
+        double m_dTimebase;     // s/div
+        double m_dTimebasePos;  // s
+        unsigned m_u32MemDepth; // points
 
-        Enum_Scope_TriggerMode   m_eTrigMode;
-        Enum_Scope_TriggerType   m_eTrigType;
+        Enum_Scope_TriggerMode m_eTrigMode;
+        Enum_Scope_TriggerType m_eTrigType;
         Enum_Scope_TriggerSource m_eTrigSource;
-        Enum_Scope_TriggerSlope  m_eTrigSlope;
+        Enum_Scope_TriggerSlope m_eTrigSlope;
         double m_dTrigLevel;
         double m_dTrigHoldoff;
 
-        Enum_Scope_AcqMode  m_eAcqMode;
-        int    m_iAvgCount;
+        Enum_Scope_AcqMode m_eAcqMode;
+        int m_iAvgCount;
         Enum_Scope_AcqState m_eAcqState;
 
         Enum_Scope_WaveformFormat m_eWfmFormat;
-        int    m_iWfmPoints;
+        int m_iWfmPoints;
         Enum_Scope_WaveformSource m_eWfmSource;
-        int    m_iWfmSourceIndex;
+        int m_iWfmSourceIndex;
 
         // per-channel extras (sized to the model's analog channel count)
-        QVector<double>                    m_vVertPosition;
+        QVector<double> m_vVertPosition;
         QVector<Enum_Scope_InputImpedance> m_vImpedance;
-        QVector<bool>                      m_vInvert;
-        QVector<QString>                   m_vLabel;
-        QVector<QString>                   m_vUnits;
-        QVector<double>                    m_vDeskew;
+        QVector<bool> m_vInvert;
+        QVector<QString> m_vLabel;
+        QVector<QString> m_vUnits;
+        QVector<double> m_vDeskew;
 
-        Enum_Scope_TimebaseMode  m_eTimebaseMode;
-        U32BIT                   m_u32SegmentCount;
-        Enum_Scope_Coupling      m_eTrigCoupling;
+        Enum_Scope_TimebaseMode m_eTimebaseMode;
+        U32BIT m_u32SegmentCount;
+        Enum_Scope_Coupling m_eTrigCoupling;
 
-        Enum_Scope_MathOp    m_eMathOp;
+        Enum_Scope_MathOp m_eMathOp;
         Enum_Scope_FftWindow m_eFftWindow;
         Enum_Scope_CursorType m_eCursorType;
         double m_dCursorX1, m_dCursorX2, m_dCursorY1, m_dCursorY2;
 
         QString m_strAwgFunction;
-        double  m_dAwgFreq, m_dAwgAmpl, m_dAwgOffset;
-        bool    m_bAwgOn;
+        double m_dAwgFreq, m_dAwgAmpl, m_dAwgOffset;
+        bool m_bAwgOn;
 
         Enum_Scope_RemoteState m_eRemote;
         bool m_bKeyLocked;
 
-        S_SimDevice() : m_bConnected(false), m_pLimits(nullptr)
-            , m_eShape(SHAPE_SINE), m_u32Timeout(5000)
-            , m_dTimebase(1.0e-6), m_dTimebasePos(0.0), m_u32MemDepth(1000)
-            , m_eTrigMode(Enum_Scope_TriggerMode::m_enumAuto)
-            , m_eTrigType(Enum_Scope_TriggerType::m_enumEdge)
-            , m_eTrigSource(Enum_Scope_TriggerSource::m_enumCh1)
-            , m_eTrigSlope(Enum_Scope_TriggerSlope::m_enumRising)
-            , m_dTrigLevel(0.0), m_dTrigHoldoff(0.0)
-            , m_eAcqMode(Enum_Scope_AcqMode::m_enumSample)
-            , m_iAvgCount(16), m_eAcqState(Enum_Scope_AcqState::m_enumStopped)
-            , m_eWfmFormat(Enum_Scope_WaveformFormat::m_enumWord)
-            , m_iWfmPoints(1000)
-            , m_eWfmSource(Enum_Scope_WaveformSource::m_enumChannel)
-            , m_iWfmSourceIndex(1)
-            , m_eTimebaseMode(Enum_Scope_TimebaseMode::m_enumMain)
-            , m_u32SegmentCount(1)
-            , m_eTrigCoupling(Enum_Scope_Coupling::m_enumDC)
-            , m_eMathOp(Enum_Scope_MathOp::m_enumAdd)
-            , m_eFftWindow(Enum_Scope_FftWindow::m_enumHann)
-            , m_eCursorType(Enum_Scope_CursorType::m_enumOff)
-            , m_dCursorX1(0.0), m_dCursorX2(0.0), m_dCursorY1(0.0), m_dCursorY2(0.0)
-            , m_dAwgFreq(1000.0), m_dAwgAmpl(1.0), m_dAwgOffset(0.0), m_bAwgOn(false)
-            , m_eRemote(Enum_Scope_RemoteState::m_enumRemote), m_bKeyLocked(false)
-        {}
+        S_SimDevice()
+            : m_bConnected(false), m_pLimits(nullptr), m_eShape(SHAPE_SINE), m_u32Timeout(5000),
+              m_dTimebase(1.0e-6), m_dTimebasePos(0.0), m_u32MemDepth(1000),
+              m_eTrigMode(Enum_Scope_TriggerMode::m_enumAuto),
+              m_eTrigType(Enum_Scope_TriggerType::m_enumEdge),
+              m_eTrigSource(Enum_Scope_TriggerSource::m_enumCh1),
+              m_eTrigSlope(Enum_Scope_TriggerSlope::m_enumRising), m_dTrigLevel(0.0), m_dTrigHoldoff(0.0),
+              m_eAcqMode(Enum_Scope_AcqMode::m_enumSample), m_iAvgCount(16),
+              m_eAcqState(Enum_Scope_AcqState::m_enumStopped),
+              m_eWfmFormat(Enum_Scope_WaveformFormat::m_enumWord), m_iWfmPoints(1000),
+              m_eWfmSource(Enum_Scope_WaveformSource::m_enumChannel), m_iWfmSourceIndex(1),
+              m_eTimebaseMode(Enum_Scope_TimebaseMode::m_enumMain), m_u32SegmentCount(1),
+              m_eTrigCoupling(Enum_Scope_Coupling::m_enumDC), m_eMathOp(Enum_Scope_MathOp::m_enumAdd),
+              m_eFftWindow(Enum_Scope_FftWindow::m_enumHann), m_eCursorType(Enum_Scope_CursorType::m_enumOff),
+              m_dCursorX1(0.0), m_dCursorX2(0.0), m_dCursorY1(0.0), m_dCursorY2(0.0), m_dAwgFreq(1000.0),
+              m_dAwgAmpl(1.0), m_dAwgOffset(0.0), m_bAwgOn(false),
+              m_eRemote(Enum_Scope_RemoteState::m_enumRemote), m_bKeyLocked(false)
+        {
+        }
     };
 
     S_SimDevice* dev(U32BIT s);
     const S_SimDevice* dev(U32BIT s) const;
     bool validChannel(const S_SimDevice* d, U32BIT c) const;
 
-    void   synthesize(const S_SimDevice* d, U32BIT c,
-                      QVector<FDOUBLE>& out_time, QVector<FDOUBLE>& out_volts) const;
+    void synthesize(const S_SimDevice* d, U32BIT c, QVector<FDOUBLE>& out_time,
+                    QVector<FDOUBLE>& out_volts) const;
     double computeMeasurement(const S_SimDevice* d, U32BIT c, Enum_Scope_MeasType t, bool& out_bValid) const;
 
     QMap<U32BIT, S_SimDevice> m_devices;

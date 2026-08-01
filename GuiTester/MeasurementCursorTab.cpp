@@ -13,13 +13,13 @@
 #include <QTableWidget>
 #include <QVBoxLayout>
 
-namespace {
-const char* MEAS_NAMES[] = { "Vpp", "Vmax", "Vmin", "Vrms", "Vavg", "Frequency", "Period" };
+namespace
+{
+const char* MEAS_NAMES[] = {"Vpp", "Vmax", "Vmin", "Vrms", "Vavg", "Frequency", "Period"};
 const Enum_Scope_MeasType MEAS_TYPES[] = {
-    Enum_Scope_MeasType::m_enumVpp, Enum_Scope_MeasType::m_enumVmax, Enum_Scope_MeasType::m_enumVmin,
-    Enum_Scope_MeasType::m_enumVrms, Enum_Scope_MeasType::m_enumVavg,
-    Enum_Scope_MeasType::m_enumFrequency, Enum_Scope_MeasType::m_enumPeriod
-};
+    Enum_Scope_MeasType::m_enumVpp,   Enum_Scope_MeasType::m_enumVmax, Enum_Scope_MeasType::m_enumVmin,
+    Enum_Scope_MeasType::m_enumVrms,  Enum_Scope_MeasType::m_enumVavg, Enum_Scope_MeasType::m_enumFrequency,
+    Enum_Scope_MeasType::m_enumPeriod};
 const int MEAS_COUNT = 7;
 } // namespace
 
@@ -28,9 +28,13 @@ MeasurementCursorTab::MeasurementCursorTab(QWidget* parent) : QWidget(parent)
     QVBoxLayout* root = new QVBoxLayout(this);
 
     QHBoxLayout* ctl = new QHBoxLayout;
-    m_pChannel = new QSpinBox(this); m_pChannel->setRange(1, 4);
+    m_pChannel = new QSpinBox(this);
+    m_pChannel->setRange(1, 4);
     m_pMeasType = new QComboBox(this);
-    for (int i = 0; i < MEAS_COUNT; ++i) m_pMeasType->addItem(QString::fromLatin1(MEAS_NAMES[i]));
+    for (int i = 0; i < MEAS_COUNT; ++i)
+    {
+        m_pMeasType->addItem(QString::fromLatin1(MEAS_NAMES[i]));
+    }
     m_pAddBtn = new QPushButton(tr("Add / Read"), this);
     ctl->addWidget(new QLabel(tr("CH:"), this));
     ctl->addWidget(m_pChannel);
@@ -62,14 +66,18 @@ MeasurementCursorTab::MeasurementCursorTab(QWidget* parent) : QWidget(parent)
 void MeasurementCursorTab::onAddMeasurement()
 {
     const int idx = m_pMeasType->currentIndex();
-    if (idx < 0 || idx >= MEAS_COUNT) return;
+    if (idx < 0 || idx >= MEAS_COUNT)
+    {
+        return;
+    }
     S_Scope_MeasurementResult r;
     ScopeError e = CScopeManager::instance().readMeasurement(
         TESTER_SCOPE, static_cast<U32BIT>(m_pChannel->value()), MEAS_TYPES[idx], r);
     const int row = m_pTable->rowCount();
     m_pTable->insertRow(row);
     m_pTable->setItem(row, 0, new QTableWidgetItem(QString::fromLatin1(MEAS_NAMES[idx])));
-    m_pTable->setItem(row, 1, new QTableWidgetItem(e.isSuccess() ? QString::number(r.m_dValue, 'g', 6) : e.toString()));
+    m_pTable->setItem(
+        row, 1, new QTableWidgetItem(e.isSuccess() ? QString::number(r.m_dValue, 'g', 6) : e.toString()));
     m_pTable->setItem(row, 2, new QTableWidgetItem(r.m_strUnits));
     emit log(e.isSuccess() ? tr("Measured %1").arg(QString::fromLatin1(MEAS_NAMES[idx])) : e.toString());
 }
@@ -77,19 +85,28 @@ void MeasurementCursorTab::onAddMeasurement()
 void MeasurementCursorTab::onApplyCursor()
 {
     CScopeManager& mgr = CScopeManager::instance();
-    ScopeError e = mgr.setCursorType(TESTER_SCOPE, static_cast<Enum_Scope_CursorType>(m_pCursorType->currentIndex()));
-    if (e.isSuccess()) e = mgr.setCursorSource(TESTER_SCOPE, static_cast<U32BIT>(m_pChannel->value()));
+    ScopeError e =
+        mgr.setCursorType(TESTER_SCOPE, static_cast<Enum_Scope_CursorType>(m_pCursorType->currentIndex()));
+    if (e.isSuccess())
+    {
+        e = mgr.setCursorSource(TESTER_SCOPE, static_cast<U32BIT>(m_pChannel->value()));
+    }
     emit log(e.isSuccess() ? tr("Cursor applied") : e.toString());
 }
 
 void MeasurementCursorTab::setConnected(bool in_bConnected)
 {
     setEnabled(in_bConnected);
-    if (in_bConnected) {
+    if (in_bConnected)
+    {
         S_Scope_Capabilities caps = CScopeManager::instance().getCapabilities(TESTER_SCOPE);
         if (caps.m_u32NumberOfChannels >= 1)
+        {
             m_pChannel->setRange(1, static_cast<int>(caps.m_u32NumberOfChannels));
-    } else {
+        }
+    }
+    else
+    {
         m_pTable->setRowCount(0);
     }
 }

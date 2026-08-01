@@ -17,7 +17,8 @@ SaveTab::SaveTab(QWidget* parent) : QWidget(parent)
     QVBoxLayout* root = new QVBoxLayout(this);
 
     QHBoxLayout* ctl = new QHBoxLayout;
-    m_pSlot = new QSpinBox(this); m_pSlot->setRange(0, 9);
+    m_pSlot = new QSpinBox(this);
+    m_pSlot->setRange(0, 9);
     m_pSaveBtn = new QPushButton(tr("Save setup"), this);
     m_pRecallBtn = new QPushButton(tr("Recall setup"), this);
     m_pShotBtn = new QPushButton(tr("Capture Screenshot"), this);
@@ -54,13 +55,17 @@ void SaveTab::onRecall()
 void SaveTab::onScreenshot()
 {
     QByteArray png;
-    ScopeError e = CScopeManager::instance().captureScreenshot(TESTER_SCOPE, Enum_Scope_ImageFormat::m_enumPng, png);
+    ScopeError e =
+        CScopeManager::instance().captureScreenshot(TESTER_SCOPE, Enum_Scope_ImageFormat::m_enumPng, png);
     QImage img;
-    if (e.isSuccess() && img.loadFromData(png)) {
-        m_pShotLabel->setPixmap(QPixmap::fromImage(img).scaled(
-            m_pShotLabel->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    if (e.isSuccess() && img.loadFromData(png))
+    {
+        m_pShotLabel->setPixmap(QPixmap::fromImage(img).scaled(m_pShotLabel->size(), Qt::KeepAspectRatio,
+                                                               Qt::SmoothTransformation));
         emit log(tr("Screenshot captured (%1 bytes)").arg(png.size()));
-    } else {
+    }
+    else
+    {
         emit log(tr("Screenshot failed: %1").arg(e.toString()));
     }
 }
@@ -68,5 +73,9 @@ void SaveTab::onScreenshot()
 void SaveTab::setConnected(bool in_bConnected)
 {
     setEnabled(in_bConnected);
-    if (!in_bConnected) { m_pShotLabel->setPixmap(QPixmap()); m_pShotLabel->setText(tr("no screenshot")); }
+    if (!in_bConnected)
+    {
+        m_pShotLabel->setPixmap(QPixmap());
+        m_pShotLabel->setText(tr("no screenshot"));
+    }
 }

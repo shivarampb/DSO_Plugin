@@ -20,9 +20,14 @@ ConnectionTab::ConnectionTab(QWidget* parent) : QWidget(parent)
     QFormLayout* form = new QFormLayout;
     m_pModelCombo = new QComboBox(this);
     for (const QString& m : CScopeManager::instance().getAvailablePlugins())
+    {
         m_pModelCombo->addItem(m);
+    }
     const int iRef = m_pModelCombo->findText(QStringLiteral("MDO34"));
-    if (iRef >= 0) m_pModelCombo->setCurrentIndex(iRef);
+    if (iRef >= 0)
+    {
+        m_pModelCombo->setCurrentIndex(iRef);
+    }
 
     m_pInterfaceCombo = new QComboBox(this);
     m_pInterfaceCombo->addItems(QStringList() << "LAN" << "USB" << "GPIB" << "Mock (dev)" << "SimScope");
@@ -57,16 +62,34 @@ ConnectionTab::ConnectionTab(QWidget* parent) : QWidget(parent)
     connect(m_pInterfaceCombo, SIGNAL(currentIndexChanged(int)), this, SLOT(onInterfaceChanged()));
 }
 
-QString ConnectionTab::selectedModel() const { return m_pModelCombo->currentText(); }
+QString ConnectionTab::selectedModel() const
+{
+    return m_pModelCombo->currentText();
+}
 
 void ConnectionTab::onInterfaceChanged()
 {
     const QString iface = m_pInterfaceCombo->currentText();
-    if (iface == "LAN")            m_pAddressEdit->setText("192.168.1.100");
-    else if (iface == "USB")       m_pAddressEdit->setText("USB0::0x0699::0x0522::C010000::INSTR");
-    else if (iface == "GPIB")      m_pAddressEdit->setText("7");
-    else if (iface == "SimScope")  m_pAddressEdit->setText("SIM::" + selectedModel());
-    else /* Mock (dev) */          m_pAddressEdit->setText("MOCK0::" + selectedModel() + "::INSTR");
+    if (iface == "LAN")
+    {
+        m_pAddressEdit->setText("192.168.1.100");
+    }
+    else if (iface == "USB")
+    {
+        m_pAddressEdit->setText("USB0::0x0699::0x0522::C010000::INSTR");
+    }
+    else if (iface == "GPIB")
+    {
+        m_pAddressEdit->setText("7");
+    }
+    else if (iface == "SimScope")
+    {
+        m_pAddressEdit->setText("SIM::" + selectedModel());
+    }
+    else /* Mock (dev) */
+    {
+        m_pAddressEdit->setText("MOCK0::" + selectedModel() + "::INSTR");
+    }
 }
 
 S_Scope_ConnectionConfig ConnectionTab::buildConfig() const
@@ -74,16 +97,23 @@ S_Scope_ConnectionConfig ConnectionTab::buildConfig() const
     S_Scope_ConnectionConfig cfg;
     const QString iface = m_pInterfaceCombo->currentText();
     const QByteArray addr = m_pAddressEdit->text().trimmed().toLatin1();
-    if (iface == "LAN") {
+    if (iface == "LAN")
+    {
         cfg.m_enumProtocol = Enum_Scope_CommunicationProtocol::TCPIP;
         qstrncpy(cfg.m_szIpAddress, addr.constData(), CONN_IP_ADDR_SIZE);
-    } else if (iface == "USB") {
+    }
+    else if (iface == "USB")
+    {
         cfg.m_enumProtocol = Enum_Scope_CommunicationProtocol::USB;
-        cfg.setResourceString(QString::fromLatin1(addr));      // explicit USB resource
-    } else if (iface == "GPIB") {
+        cfg.setResourceString(QString::fromLatin1(addr)); // explicit USB resource
+    }
+    else if (iface == "GPIB")
+    {
         cfg.m_enumProtocol = Enum_Scope_CommunicationProtocol::GPIB;
         cfg.m_u32GpibAddress = m_pAddressEdit->text().toUInt();
-    } else { // Mock (dev) or SimScope: explicit resource string
+    }
+    else
+    { // Mock (dev) or SimScope: explicit resource string
         cfg.setResourceString(QString::fromLatin1(addr));
     }
     return cfg;
@@ -93,18 +123,28 @@ void ConnectionTab::onConnect()
 {
     CScopeManager& mgr = CScopeManager::instance();
     const QString model = selectedModel();
-    if (model.isEmpty()) { emit log(tr("No model selected")); return; }
+    if (model.isEmpty())
+    {
+        emit log(tr("No model selected"));
+        return;
+    }
 
     // SimScope interface binds the SimScope plugin; otherwise the chosen model.
-    const QString plugin = (m_pInterfaceCombo->currentText() == "SimScope")
-                         ? QStringLiteral("SimScope") : model;
+    const QString plugin =
+        (m_pInterfaceCombo->currentText() == "SimScope") ? QStringLiteral("SimScope") : model;
 
-    if (!mgr.instanceExists(TESTER_SCOPE)) {
+    if (!mgr.instanceExists(TESTER_SCOPE))
+    {
         ScopeError e = mgr.createInstance(TESTER_SCOPE, plugin);
-        if (!e.isSuccess()) { emit log(tr("createInstance failed: %1").arg(e.toString())); return; }
+        if (!e.isSuccess())
+        {
+            emit log(tr("createInstance failed: %1").arg(e.toString()));
+            return;
+        }
     }
     ScopeError e = mgr.connect(TESTER_SCOPE, buildConfig());
-    if (!e.isSuccess()) {
+    if (!e.isSuccess())
+    {
         emit log(tr("Connect failed: %1").arg(e.toString()));
         mgr.destroyInstance(TESTER_SCOPE);
         return;
@@ -139,9 +179,17 @@ void ConnectionTab::onDisconnect()
 bool ConnectionTab::connectTo(const QString& in_strModel, const QString& in_strResource)
 {
     CScopeManager& mgr = CScopeManager::instance();
-    if (!mgr.createInstance(TESTER_SCOPE, in_strModel).isSuccess()) return false;
-    S_Scope_ConnectionConfig cfg; cfg.setResourceString(in_strResource);
-    if (!mgr.connect(TESTER_SCOPE, cfg).isSuccess()) { mgr.destroyInstance(TESTER_SCOPE); return false; }
+    if (!mgr.createInstance(TESTER_SCOPE, in_strModel).isSuccess())
+    {
+        return false;
+    }
+    S_Scope_ConnectionConfig cfg;
+    cfg.setResourceString(in_strResource);
+    if (!mgr.connect(TESTER_SCOPE, cfg).isSuccess())
+    {
+        mgr.destroyInstance(TESTER_SCOPE);
+        return false;
+    }
     emit connected(in_strModel);
     return true;
 }

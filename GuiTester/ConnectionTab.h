@@ -16,31 +16,31 @@ class QPushButton;
 class ConnectionTab : public QWidget
 {
     Q_OBJECT
-public:
+  public:
     explicit ConnectionTab(QWidget* parent = nullptr);
 
     QString selectedModel() const;
-    bool    connectTo(const QString& in_strModel, const QString& in_strResource); // for smoke
+    bool connectTo(const QString& in_strModel, const QString& in_strResource); // for smoke
 
-signals:
+  signals:
     void connected(const QString& in_strModel);
     void disconnected();
     void log(const QString& in_strText);
 
-private slots:
+  private slots:
     void onConnect();
     void onDisconnect();
     void onInterfaceChanged();
 
-private:
+  private:
     S_Scope_ConnectionConfig buildConfig() const;
 
-    QComboBox*   m_pModelCombo;
-    QComboBox*   m_pInterfaceCombo;
-    QLineEdit*   m_pAddressEdit;
+    QComboBox* m_pModelCombo;
+    QComboBox* m_pInterfaceCombo;
+    QLineEdit* m_pAddressEdit;
     QPushButton* m_pConnectBtn;
     QPushButton* m_pDisconnectBtn;
-    QLabel*      m_pIdentityLabel;
+    QLabel* m_pIdentityLabel;
 };
 
 #endif // CONNECTIONTAB_H

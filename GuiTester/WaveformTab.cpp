@@ -17,7 +17,8 @@ WaveformTab::WaveformTab(QWidget* parent) : QWidget(parent)
     QVBoxLayout* root = new QVBoxLayout(this);
 
     QHBoxLayout* ctl = new QHBoxLayout;
-    m_pChannel = new QSpinBox(this); m_pChannel->setRange(1, 4);
+    m_pChannel = new QSpinBox(this);
+    m_pChannel->setRange(1, 4);
     m_pFetchBtn = new QPushButton(tr("Fetch"), this);
     m_pStreamBtn = new QPushButton(tr("Start stream"), this);
     m_pStreamBtn->setCheckable(true);
@@ -46,31 +47,52 @@ bool WaveformTab::pollOnce()
     mgr.single(TESTER_SCOPE);
     S_Scope_Waveform wfm;
     const bool ok = mgr.readWaveform(TESTER_SCOPE, ch, wfm).isSuccess() && wfm.pointCount() > 1;
-    if (ok) m_pPlot->setWaveform(wfm);
+    if (ok)
+    {
+        m_pPlot->setWaveform(wfm);
+    }
     return ok;
 }
 
 void WaveformTab::onFetch()
 {
-    if (!pollOnce()) emit log(tr("Waveform fetch failed"));
+    if (!pollOnce())
+    {
+        emit log(tr("Waveform fetch failed"));
+    }
 }
 
-void WaveformTab::onTick() { pollOnce(); }
+void WaveformTab::onTick()
+{
+    pollOnce();
+}
 
 void WaveformTab::onStreamToggled(bool checked)
 {
     m_pStreamBtn->setText(checked ? tr("Stop stream") : tr("Start stream"));
-    if (checked) m_pTimer->start(); else m_pTimer->stop();
+    if (checked)
+    {
+        m_pTimer->start();
+    }
+    else
+    {
+        m_pTimer->stop();
+    }
 }
 
 void WaveformTab::setConnected(bool in_bConnected)
 {
     setEnabled(in_bConnected);
-    if (in_bConnected) {
+    if (in_bConnected)
+    {
         S_Scope_Capabilities caps = CScopeManager::instance().getCapabilities(TESTER_SCOPE);
         if (caps.m_u32NumberOfChannels >= 1)
+        {
             m_pChannel->setRange(1, static_cast<int>(caps.m_u32NumberOfChannels));
-    } else {
+        }
+    }
+    else
+    {
         m_pTimer->stop();
         m_pStreamBtn->blockSignals(true);
         m_pStreamBtn->setChecked(false);

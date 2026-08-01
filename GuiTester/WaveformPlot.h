@@ -14,19 +14,19 @@
 class WaveformPlot : public QWidget
 {
     Q_OBJECT
-public:
+  public:
     explicit WaveformPlot(QWidget* in_pParent = nullptr);
 
     void setWaveform(const S_Scope_Waveform& in_sWaveform);
     void clearWaveform();
 
-protected:
+  protected:
     void paintEvent(QPaintEvent* in_pEvent) override;
 
-private:
+  private:
     QVector<FDOUBLE> m_vecTime;
     QVector<FDOUBLE> m_vecVolts;
-    bool             m_bHave;
+    bool m_bHave;
 };
 
 #endif // WAVEFORMPLOT_H

@@ -52,21 +52,39 @@ int main(int argc, char** argv)
 {
     bool bSmoke = false;
     QString strPluginDir, strShot;
-    for (int i = 1; i < argc; ++i) {
+    for (int i = 1; i < argc; ++i)
+    {
         const QString a = QString::fromLocal8Bit(argv[i]);
-        if (a == QStringLiteral("--smoke")) bSmoke = true;
-        else if (a == QStringLiteral("--screenshot") && i + 1 < argc) strShot = QString::fromLocal8Bit(argv[++i]);
-        else strPluginDir = a;
+        if (a == QStringLiteral("--smoke"))
+        {
+            bSmoke = true;
+        }
+        else if (a == QStringLiteral("--screenshot") && i + 1 < argc)
+        {
+            strShot = QString::fromLocal8Bit(argv[++i]);
+        }
+        else
+        {
+            strPluginDir = a;
+        }
     }
 
     QApplication app(argc, argv);
     applyDarkTheme(app);
     if (strPluginDir.isEmpty())
+    {
         strPluginDir = QCoreApplication::applicationDirPath() + QStringLiteral("/../plugins");
+    }
 
     ScopeTesterWindow w(strPluginDir);
-    if (bSmoke)             return w.runSmokeTest();
-    if (!strShot.isEmpty()) return w.screenshotTo(strShot);
+    if (bSmoke)
+    {
+        return w.runSmokeTest();
+    }
+    if (!strShot.isEmpty())
+    {
+        return w.screenshotTo(strShot);
+    }
 
     w.show();
     return app.exec();

@@ -39,39 +39,42 @@
 
 #include "IScopePlugin.h"
 #include "ScopeError.h"
-#include "ScopeTypes.h"   // provides SCOPECORE_EXPORT
+#include "ScopeTypes.h" // provides SCOPECORE_EXPORT
 
 /* Live SCPI trace tap (optional). Direction: 0=TX 1=RX 2=ERR 3=INFO. */
-typedef void (*ScopeTraceCallback)(void* in_pvUser, U32BIT in_u32ScopeNumber,
-                                   int in_iDirection, const QString& in_strText);
+typedef void (*ScopeTraceCallback)(void* in_pvUser, U32BIT in_u32ScopeNumber, int in_iDirection,
+                                   const QString& in_strText);
 
 class SCOPECORE_EXPORT CScopeManager : public QObject
 {
     Q_OBJECT
-public:
+  public:
     CScopeManager();
     ~CScopeManager();
 
     static CScopeManager& instance();
 
     /*==== plugin management ==============================================*/
-    void        loadPlugins(const QString& in_strPluginPath);
+    void loadPlugins(const QString& in_strPluginPath);
     QStringList getAvailablePlugins() const;
-    S_Scope_PluginInfo   getPluginInfoByName(const QString& in_strPluginName) const;
+    S_Scope_PluginInfo getPluginInfoByName(const QString& in_strPluginName) const;
     S_Scope_Capabilities getPluginCapabilities(const QString& in_strPluginName) const;
-    QString     getCoreVersion() const { return QStringLiteral("1.0.0"); }
+    QString getCoreVersion() const
+    {
+        return QStringLiteral("1.0.0");
+    }
 
     /*==== instance management ============================================*/
     ScopeError createInstance(U32BIT in_u32ScopeNumber, const QString& in_strPluginName);
     ScopeError destroyInstance(U32BIT in_u32ScopeNumber);
-    bool       instanceExists(U32BIT in_u32ScopeNumber) const;
-    QString    getInstancePlugin(U32BIT in_u32ScopeNumber) const;
+    bool instanceExists(U32BIT in_u32ScopeNumber) const;
+    QString getInstancePlugin(U32BIT in_u32ScopeNumber) const;
     S_Scope_Capabilities getCapabilities(U32BIT in_u32ScopeNumber) const;
 
     /*==== connection / core ==============================================*/
     ScopeError connect(U32BIT in_u32ScopeNumber, const S_Scope_ConnectionConfig& in_sConfig);
     ScopeError disconnect(U32BIT in_u32ScopeNumber);
-    bool       isConnected(U32BIT in_u32ScopeNumber) const;
+    bool isConnected(U32BIT in_u32ScopeNumber) const;
     ScopeError reset(U32BIT in_u32ScopeNumber);
     ScopeError setTimeout(U32BIT in_u32ScopeNumber, U32BIT in_u32TimeoutMs);
     ScopeError clearStatus(U32BIT in_u32ScopeNumber);
@@ -80,8 +83,8 @@ public:
     ScopeError getOptions(U32BIT in_u32ScopeNumber, QString& out_strOptions);
     ScopeError waitOperationComplete(U32BIT in_u32ScopeNumber);
     ScopeError getScpiVersion(U32BIT in_u32ScopeNumber, QString& out_strVersion);
-    ScopeError getParameterRange(U32BIT in_u32ScopeNumber, U32BIT in_u32Channel,
-                                 Enum_Scope_ParamId in_eParam, S_Scope_ParameterRange& out_sRange);
+    ScopeError getParameterRange(U32BIT in_u32ScopeNumber, U32BIT in_u32Channel, Enum_Scope_ParamId in_eParam,
+                                 S_Scope_ParameterRange& out_sRange);
     ScopeError autoscale(U32BIT in_u32ScopeNumber);
     ScopeError run(U32BIT in_u32ScopeNumber);
     ScopeError stop(U32BIT in_u32ScopeNumber);
@@ -98,13 +101,18 @@ public:
     ScopeError setVerticalPosition(U32BIT in_u32ScopeNumber, U32BIT in_u32Channel, FDOUBLE in_dDiv);
     ScopeError getVerticalPosition(U32BIT in_u32ScopeNumber, U32BIT in_u32Channel, FDOUBLE& out_dDiv);
     ScopeError setCoupling(U32BIT in_u32ScopeNumber, U32BIT in_u32Channel, Enum_Scope_Coupling in_eCoupling);
-    ScopeError getCoupling(U32BIT in_u32ScopeNumber, U32BIT in_u32Channel, Enum_Scope_Coupling& out_eCoupling);
-    ScopeError setBandwidthLimit(U32BIT in_u32ScopeNumber, U32BIT in_u32Channel, Enum_Scope_BandwidthLimit in_eLimit);
-    ScopeError getBandwidthLimit(U32BIT in_u32ScopeNumber, U32BIT in_u32Channel, Enum_Scope_BandwidthLimit& out_eLimit);
+    ScopeError getCoupling(U32BIT in_u32ScopeNumber, U32BIT in_u32Channel,
+                           Enum_Scope_Coupling& out_eCoupling);
+    ScopeError setBandwidthLimit(U32BIT in_u32ScopeNumber, U32BIT in_u32Channel,
+                                 Enum_Scope_BandwidthLimit in_eLimit);
+    ScopeError getBandwidthLimit(U32BIT in_u32ScopeNumber, U32BIT in_u32Channel,
+                                 Enum_Scope_BandwidthLimit& out_eLimit);
     ScopeError setProbeAttenuation(U32BIT in_u32ScopeNumber, U32BIT in_u32Channel, FDOUBLE in_dRatio);
     ScopeError getProbeAttenuation(U32BIT in_u32ScopeNumber, U32BIT in_u32Channel, FDOUBLE& out_dRatio);
-    ScopeError setInputImpedance(U32BIT in_u32ScopeNumber, U32BIT in_u32Channel, Enum_Scope_InputImpedance in_eImp);
-    ScopeError getInputImpedance(U32BIT in_u32ScopeNumber, U32BIT in_u32Channel, Enum_Scope_InputImpedance& out_eImp);
+    ScopeError setInputImpedance(U32BIT in_u32ScopeNumber, U32BIT in_u32Channel,
+                                 Enum_Scope_InputImpedance in_eImp);
+    ScopeError getInputImpedance(U32BIT in_u32ScopeNumber, U32BIT in_u32Channel,
+                                 Enum_Scope_InputImpedance& out_eImp);
     ScopeError setInvert(U32BIT in_u32ScopeNumber, U32BIT in_u32Channel, bool in_bOn);
     ScopeError getInvert(U32BIT in_u32ScopeNumber, U32BIT in_u32Channel, bool& out_bOn);
     ScopeError setChannelLabel(U32BIT in_u32ScopeNumber, U32BIT in_u32Channel, const QString& in_strLabel);
@@ -158,21 +166,26 @@ public:
     ScopeError getSegmentedCount(U32BIT in_u32ScopeNumber, U32BIT& out_u32Segments);
 
     /*==== waveform transfer ==============================================*/
-    ScopeError setWaveformSource(U32BIT in_u32ScopeNumber, Enum_Scope_WaveformSource in_eSource, U32BIT in_u32Index);
-    ScopeError getWaveformSource(U32BIT in_u32ScopeNumber, Enum_Scope_WaveformSource& out_eSource, U32BIT& out_u32Index);
+    ScopeError setWaveformSource(U32BIT in_u32ScopeNumber, Enum_Scope_WaveformSource in_eSource,
+                                 U32BIT in_u32Index);
+    ScopeError getWaveformSource(U32BIT in_u32ScopeNumber, Enum_Scope_WaveformSource& out_eSource,
+                                 U32BIT& out_u32Index);
     ScopeError setWaveformFormat(U32BIT in_u32ScopeNumber, Enum_Scope_WaveformFormat in_eFormat);
     ScopeError getWaveformFormat(U32BIT in_u32ScopeNumber, Enum_Scope_WaveformFormat& out_eFormat);
     ScopeError setWaveformPoints(U32BIT in_u32ScopeNumber, U32BIT in_u32Points);
-    ScopeError getWaveformPreamble(U32BIT in_u32ScopeNumber, U32BIT in_u32Channel, S_Scope_WaveformPreamble& out_sPreamble);
+    ScopeError getWaveformPreamble(U32BIT in_u32ScopeNumber, U32BIT in_u32Channel,
+                                   S_Scope_WaveformPreamble& out_sPreamble);
     ScopeError readWaveform(U32BIT in_u32ScopeNumber, U32BIT in_u32Channel, S_Scope_Waveform& out_sWaveform);
     ScopeError digitizeChannel(U32BIT in_u32ScopeNumber, U32BIT in_u32Channel);
 
     /*==== automatic measurements =========================================*/
     ScopeError addMeasurement(U32BIT in_u32ScopeNumber, U32BIT in_u32Channel, Enum_Scope_MeasType in_eType);
-    ScopeError readMeasurement(U32BIT in_u32ScopeNumber, U32BIT in_u32Channel, Enum_Scope_MeasType in_eType, S_Scope_MeasurementResult& out_sResult);
+    ScopeError readMeasurement(U32BIT in_u32ScopeNumber, U32BIT in_u32Channel, Enum_Scope_MeasType in_eType,
+                               S_Scope_MeasurementResult& out_sResult);
     ScopeError clearMeasurements(U32BIT in_u32ScopeNumber);
     ScopeError setMeasureStatistics(U32BIT in_u32ScopeNumber, bool in_bOn);
-    ScopeError getMeasurementStatistics(U32BIT in_u32ScopeNumber, U32BIT in_u32Channel, Enum_Scope_MeasType in_eType, S_Scope_MeasurementResult& out_sResult);
+    ScopeError getMeasurementStatistics(U32BIT in_u32ScopeNumber, U32BIT in_u32Channel,
+                                        Enum_Scope_MeasType in_eType, S_Scope_MeasurementResult& out_sResult);
 
     /*==== math / FFT =====================================================*/
     ScopeError setMathOperation(U32BIT in_u32ScopeNumber, Enum_Scope_MathOp in_eOp);
@@ -192,7 +205,8 @@ public:
     ScopeError setCursorSource(U32BIT in_u32ScopeNumber, U32BIT in_u32Channel);
     ScopeError setCursorPosition(U32BIT in_u32ScopeNumber, U32BIT in_u32CursorIndex, FDOUBLE in_dPosition);
     ScopeError getCursorPosition(U32BIT in_u32ScopeNumber, U32BIT in_u32CursorIndex, FDOUBLE& out_dPosition);
-    ScopeError readCursorValues(U32BIT in_u32ScopeNumber, FDOUBLE& out_dX1, FDOUBLE& out_dX2, FDOUBLE& out_dY1, FDOUBLE& out_dY2);
+    ScopeError readCursorValues(U32BIT in_u32ScopeNumber, FDOUBLE& out_dX1, FDOUBLE& out_dX2,
+                                FDOUBLE& out_dY1, FDOUBLE& out_dY2);
 
     /*==== display ========================================================*/
     ScopeError setPersistence(U32BIT in_u32ScopeNumber, FDOUBLE in_dSeconds);
@@ -205,7 +219,8 @@ public:
     ScopeError saveSetup(U32BIT in_u32ScopeNumber, U32BIT in_u32Location);
     ScopeError recallSetup(U32BIT in_u32ScopeNumber, U32BIT in_u32Location);
     ScopeError saveWaveformToFile(U32BIT in_u32ScopeNumber, U32BIT in_u32Channel, const QString& in_strPath);
-    ScopeError captureScreenshot(U32BIT in_u32ScopeNumber, Enum_Scope_ImageFormat in_eFormat, QByteArray& out_imageBytes);
+    ScopeError captureScreenshot(U32BIT in_u32ScopeNumber, Enum_Scope_ImageFormat in_eFormat,
+                                 QByteArray& out_imageBytes);
     ScopeError saveToReference(U32BIT in_u32ScopeNumber, U32BIT in_u32Channel, U32BIT in_u32RefSlot);
     ScopeError displayReference(U32BIT in_u32ScopeNumber, U32BIT in_u32RefSlot, bool in_bOn);
 
@@ -225,7 +240,8 @@ public:
     ScopeError enableAwgOutput(U32BIT in_u32ScopeNumber, bool in_bOn);
 
     /*==== status / system ================================================*/
-    ScopeError readErrorStatus(U32BIT in_u32ScopeNumber, U32BIT in_u32Channel, S_Scope_DeviceErrorStatus& out_sStatus);
+    ScopeError readErrorStatus(U32BIT in_u32ScopeNumber, U32BIT in_u32Channel,
+                               S_Scope_DeviceErrorStatus& out_sStatus);
     ScopeError clearErrorStatus(U32BIT in_u32ScopeNumber, U32BIT in_u32Channel);
     ScopeError queryErrorQueue(U32BIT in_u32ScopeNumber, QString& out_strMessage);
     ScopeError getInstrumentErrorCount(U32BIT in_u32ScopeNumber, U32BIT& out_u32Count);
@@ -246,14 +262,15 @@ public:
     /*==== trace tap ======================================================*/
     void setTraceCallback(ScopeTraceCallback in_pfnCallback, void* in_pvUser);
 
-signals:
+  signals:
     void pluginLoaded(const QString& in_strPluginName);
     void pluginLoadFailed(const QString& in_strFileName, const QString& in_strError);
     void instanceCreated(U32BIT in_u32ScopeNumber, const QString& in_strPluginName);
     void instanceDestroyed(U32BIT in_u32ScopeNumber);
-    void errorOccurred(U32BIT in_u32ScopeNumber, U32BIT in_u32Channel, const S_Scope_DeviceErrorStatus& in_sStatus);
+    void errorOccurred(U32BIT in_u32ScopeNumber, U32BIT in_u32Channel,
+                       const S_Scope_DeviceErrorStatus& in_sStatus);
 
-private:
+  private:
     CScopeManager(const CScopeManager&) = delete;
     CScopeManager& operator=(const CScopeManager&) = delete;
 
@@ -261,18 +278,20 @@ private:
 
     struct S_PluginData
     {
-        QPluginLoader*       m_pLoader;
-        CIScopePlugin*       m_pPlugin;
-        S_Scope_PluginInfo   m_sInfo;
+        QPluginLoader* m_pLoader;
+        CIScopePlugin* m_pPlugin;
+        S_Scope_PluginInfo m_sInfo;
         S_Scope_Capabilities m_sCaps;
-        S_PluginData() : m_pLoader(nullptr), m_pPlugin(nullptr) {}
+        S_PluginData() : m_pLoader(nullptr), m_pPlugin(nullptr)
+        {
+        }
     };
 
-    QMap<QString, S_PluginData> m_mapPlugins;    // plugin name -> data
-    QMap<U32BIT, QString>       m_mapInstances;  // scope number -> plugin name
-    mutable QMutex              m_mutex;         // guards the maps + per-scope calls
-    ScopeTraceCallback          m_pfnTrace;
-    void*                       m_pvTraceUser;
+    QMap<QString, S_PluginData> m_mapPlugins; // plugin name -> data
+    QMap<U32BIT, QString> m_mapInstances;     // scope number -> plugin name
+    mutable QMutex m_mutex;                   // guards the maps + per-scope calls
+    ScopeTraceCallback m_pfnTrace;
+    void* m_pvTraceUser;
 };
 
 #endif // SCOPEMANAGER_H

@@ -18,12 +18,12 @@
 
 inline QString S_Scope_ConnectionConfig::toVisaResourceString() const
 {
-    const QString strPrimary   = QString::fromLocal8Bit(m_szResourceString);
-    const QString strPortName  = QString::fromLocal8Bit(m_szPortName);
+    const QString strPrimary = QString::fromLocal8Bit(m_szResourceString);
+    const QString strPortName = QString::fromLocal8Bit(m_szPortName);
     const QString strIpAddress = QString::fromLocal8Bit(m_szIpAddress);
-    const QString strVendorId  = QString::fromLocal8Bit(m_szUsbVendorId);
+    const QString strVendorId = QString::fromLocal8Bit(m_szUsbVendorId);
     const QString strProductId = QString::fromLocal8Bit(m_szUsbProductId);
-    const QString strSerial    = QString::fromLocal8Bit(m_szUsbSerialNumber);
+    const QString strSerial = QString::fromLocal8Bit(m_szUsbSerialNumber);
 
     // An explicit resource string always wins.
     if (!strPrimary.isEmpty())
@@ -46,8 +46,7 @@ inline QString S_Scope_ConnectionConfig::toVisaResourceString() const
         break;
 
     case Enum_Scope_CommunicationProtocol::GPIB:
-        strResource = QStringLiteral("GPIB%1::%2::INSTR")
-                .arg(m_u32GpibBoard).arg(m_u32GpibAddress);
+        strResource = QStringLiteral("GPIB%1::%2::INSTR").arg(m_u32GpibBoard).arg(m_u32GpibAddress);
         break;
 
     case Enum_Scope_CommunicationProtocol::USB:
@@ -55,13 +54,12 @@ inline QString S_Scope_ConnectionConfig::toVisaResourceString() const
         {
             if (!strSerial.isEmpty())
             {
-                strResource = QStringLiteral("USB0::%1::%2::%3::INSTR")
-                        .arg(strVendorId, strProductId, strSerial);
+                strResource =
+                    QStringLiteral("USB0::%1::%2::%3::INSTR").arg(strVendorId, strProductId, strSerial);
             }
             else
             {
-                strResource = QStringLiteral("USB0::%1::%2::INSTR")
-                        .arg(strVendorId, strProductId);
+                strResource = QStringLiteral("USB0::%1::%2::INSTR").arg(strVendorId, strProductId);
             }
         }
         else
@@ -75,8 +73,7 @@ inline QString S_Scope_ConnectionConfig::toVisaResourceString() const
     case Enum_Scope_CommunicationProtocol::LXI:
         if (m_u32Port != 5025 && m_u32Port != 0)
         {
-            strResource = QStringLiteral("TCPIP0::%1::%2::SOCKET")
-                    .arg(strIpAddress).arg(m_u32Port);
+            strResource = QStringLiteral("TCPIP0::%1::%2::SOCKET").arg(strIpAddress).arg(m_u32Port);
         }
         else
         {

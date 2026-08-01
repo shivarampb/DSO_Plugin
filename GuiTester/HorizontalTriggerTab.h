@@ -15,26 +15,26 @@ class QPushButton;
 class HorizontalTriggerTab : public QWidget
 {
     Q_OBJECT
-public:
+  public:
     explicit HorizontalTriggerTab(QWidget* parent = nullptr);
     void setConnected(bool in_bConnected);
 
-signals:
+  signals:
     void log(const QString& in_strText);
 
-private slots:
+  private slots:
     void onApply();
     void onForce();
 
-private:
+  private:
     QDoubleSpinBox* m_pTimebase;
-    QComboBox*      m_pTrigSource;
-    QComboBox*      m_pTrigSlope;
-    QComboBox*      m_pTrigMode;
+    QComboBox* m_pTrigSource;
+    QComboBox* m_pTrigSlope;
+    QComboBox* m_pTrigMode;
     QDoubleSpinBox* m_pTrigLevel;
-    QPushButton*    m_pApplyBtn;
-    QPushButton*    m_pForceBtn;
-    QLabel*         m_pStateLabel;
+    QPushButton* m_pApplyBtn;
+    QPushButton* m_pForceBtn;
+    QLabel* m_pStateLabel;
 };
 
 #endif // HORIZONTALTRIGGERTAB_H

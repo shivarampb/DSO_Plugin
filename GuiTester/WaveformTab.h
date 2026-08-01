@@ -15,25 +15,25 @@ class WaveformPlot;
 class WaveformTab : public QWidget
 {
     Q_OBJECT
-public:
+  public:
     explicit WaveformTab(QWidget* parent = nullptr);
     void setConnected(bool in_bConnected);
-    bool pollOnce();                          // used by the smoke test
+    bool pollOnce(); // used by the smoke test
 
-signals:
+  signals:
     void log(const QString& in_strText);
 
-private slots:
+  private slots:
     void onFetch();
     void onStreamToggled(bool checked);
     void onTick();
 
-private:
-    QSpinBox*     m_pChannel;
-    QPushButton*  m_pFetchBtn;
-    QPushButton*  m_pStreamBtn;
+  private:
+    QSpinBox* m_pChannel;
+    QPushButton* m_pFetchBtn;
+    QPushButton* m_pStreamBtn;
     WaveformPlot* m_pPlot;
-    QTimer*       m_pTimer;
+    QTimer* m_pTimer;
 };
 
 #endif // WAVEFORMTAB_H

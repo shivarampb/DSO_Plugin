@@ -15,26 +15,26 @@ class QPushButton;
 class VerticalTab : public QWidget
 {
     Q_OBJECT
-public:
+  public:
     explicit VerticalTab(QWidget* parent = nullptr);
     void setConnected(bool in_bConnected);
 
-signals:
+  signals:
     void log(const QString& in_strText);
 
-private slots:
+  private slots:
     void onChannelChanged(int idx);
     void onApply();
 
-private:
+  private:
     void loadFromInstrument();
 
-    QSpinBox*       m_pChannel;
+    QSpinBox* m_pChannel;
     QDoubleSpinBox* m_pScale;
     QDoubleSpinBox* m_pOffset;
-    QComboBox*      m_pCoupling;
-    QComboBox*      m_pProbe;
-    QPushButton*    m_pApplyBtn;
+    QComboBox* m_pCoupling;
+    QComboBox* m_pProbe;
+    QPushButton* m_pApplyBtn;
 };
 
 #endif // VERTICALTAB_H
