@@ -134,6 +134,8 @@ extern "C"
      * @param[in]  sesn  A resource-manager session from viOpenDefaultRM.
      * @param[in]  name  VISA resource string; a "TIMEOUT" resource opens a session
      *                   whose reads always time out, else an emulator is created.
+     * @param[in]  mode  Access mode (ignored by the mock).
+     * @param[in]  timeout  Open timeout (ignored by the mock).
      * @param[out] vi    Receives the new instrument session handle.
      * @return VI_SUCCESS; VI_ERROR_INV_OBJECT for a null argument or unknown @p sesn.
      * @pre    @p sesn must be a valid resource-manager session.
@@ -334,6 +336,7 @@ extern "C"
     /**
      * @brief  Begin a resource search, returning the first match and a find list.
      * @param[in]  sesn      Resource-manager session.
+     * @param[in]  expr      Search expression (ignored; the full list is returned).
      * @param[out] findList  Receives a find-list handle for viFindNext.
      * @param[out] retcnt    Receives the total number of matches.
      * @param[out] desc      Receives the first resource string.
@@ -389,6 +392,7 @@ extern "C"
 
     /**
      * @brief  Render a human-readable description for a VISA status code.
+     * @param[in]  vi      Object handle (ignored by the mock).
      * @param[in]  status  Status code to describe.
      * @param[out] desc    Receives the description (max 256 bytes).
      * @return VI_SUCCESS; VI_ERROR_INV_OBJECT if @p desc is null.

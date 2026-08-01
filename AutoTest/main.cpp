@@ -483,6 +483,7 @@ static void testMockVisa()
  * @param[in] mgr       Loaded manager.
  * @param[in] model     Plugin/model name under test.
  * @param[in] resource  MockVisa resource string to connect to.
+ * @param[in] analogChannels  Number of analog channels the model exposes.
  * @pre    Plugins are loaded and MockVisa is available.
  */
 static void testRealModel(CScopeManager& mgr, const QString& model, const QString& resource,

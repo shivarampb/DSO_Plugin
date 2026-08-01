@@ -20,3 +20,6 @@ Makefile
 # editor
 *.autosave
 *~
+
+# Generated Doxygen API docs
+docs/api/

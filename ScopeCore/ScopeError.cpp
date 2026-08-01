@@ -23,9 +23,8 @@ ScopeError::ScopeError() : m_eCode(Enum_Scope_ErrorCode::SUCCESS), m_strDescript
 
 /**
  * @brief Construct a result from a code and optional description.
- * @param[in] in_eCode          The result code.
- * @param[in] in_strDescription Detail text; a default is substituted if empty.
  * @pre   None.
+ * @note  Parameters are documented on the declaration in ScopeError.h.
  */
 ScopeError::ScopeError(Enum_Scope_ErrorCode in_eCode, const QString& in_strDescription)
     : m_eCode(in_eCode), m_strDescription(in_strDescription)
@@ -50,9 +49,9 @@ QString ScopeError::toString() const
 
 /**
  * @brief  Map a result code to its default English description.
- * @param[in] in_eCode  The code to describe.
  * @return A static description; "Undefined error" for an unknown code.
  * @pre    None.
+ * @note   Parameters are documented on the declaration in ScopeError.h.
  */
 QString ScopeError::errorCodeToString(Enum_Scope_ErrorCode in_eCode)
 {
@@ -110,9 +109,9 @@ QString ScopeError::errorCodeToString(Enum_Scope_ErrorCode in_eCode)
 
 /**
  * @brief  Join the asserted device-status flags into readable text.
- * @param[in] in_status  The decoded status flag set.
  * @return A comma-separated list of asserted flags, or "No error".
  * @pre    None.
+ * @note   Parameters are documented on the declaration in ScopeError.h.
  */
 QString ScopeError::deviceStatusToString(Scope_DeviceStatus in_status)
 {
@@ -170,9 +169,9 @@ QString ScopeError::deviceStatusToString(Scope_DeviceStatus in_status)
 
 /**
  * @brief  Map a trigger state to its short label.
- * @param[in] in_eState  The trigger state.
  * @return A short label; "UNKNOWN" for an unrecognised value.
  * @pre    None.
+ * @note   Parameters are documented on the declaration in ScopeError.h.
  */
 QString ScopeError::triggerStateToString(Enum_Scope_TriggerState in_eState)
 {
