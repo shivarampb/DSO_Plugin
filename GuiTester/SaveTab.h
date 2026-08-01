@@ -1,6 +1,11 @@
-/*============================================================================
- *  SaveTab.h - setup save/recall + instrument screenshot capture.
- *==========================================================================*/
+/**
+ * @file    SaveTab.h
+ * @brief   Save / Screenshot tab - setup save/recall and image capture.
+ * @author  Scope framework
+ * @date    2026
+ * @note    MISRA C++:2023-aligned; Allman braces; see docs/Coding_Standard.md.
+ */
+
 #ifndef SAVETAB_H
 #define SAVETAB_H
 

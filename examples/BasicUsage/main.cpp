@@ -1,11 +1,11 @@
-/*============================================================================
- *  examples/BasicUsage/main.cpp
- *
- *  Minimal consumer of the Scope plugin library: discover model plugins, bind
- *  a scope number to a model, connect, configure vertical/horizontal/trigger,
- *  capture a waveform and read a measurement. Runs with no hardware - it opens
- *  the virtual SimScope (SIM::MDO34), and optionally a MockVisa-backed model.
- *==========================================================================*/
+/**
+ * @file    main.cpp
+ * @brief   Minimal consumer of the Scope plugin library (hardware-free).
+ * @author  Scope framework
+ * @date    2026
+ * @note    MISRA C++:2023-aligned; Allman braces; see docs/Coding_Standard.md.
+ */
+
 #include "ScopeManager.h"
 
 #include <cstdio>

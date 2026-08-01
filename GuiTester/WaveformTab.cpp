@@ -1,6 +1,11 @@
-/*============================================================================
- *  WaveformTab.cpp
- *==========================================================================*/
+/**
+ * @file    WaveformTab.cpp
+ * @brief   Waveform tab implementation.
+ * @author  Scope framework
+ * @date    2026
+ * @note    MISRA C++:2023-aligned; Allman braces; see docs/Coding_Standard.md.
+ */
+
 #include "WaveformTab.h"
 #include "WaveformPlot.h"
 #include "TesterCommon.h"

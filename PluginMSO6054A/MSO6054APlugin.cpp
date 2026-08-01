@@ -1,12 +1,11 @@
-/*============================================================================
- *  MSO6054APlugin.cpp - Keysight InfiniiVision 2000 X-Series plugin.
- *  SCPI over VISA (direct), one session per scope. The embedded m_limits row
- *  is copied from the shared catalog at construction (the plugin owns its own
- *  copy; no shared base class).
- *
- *  Dialect: Keysight InfiniiVision Programmer's Guide. Exercised against the
- *  MockVisa emulator; TODO(manual) constants await manuals/MSO6054A/.
- *==========================================================================*/
+/**
+ * @file    MSO6054APlugin.cpp
+ * @brief   Agilent MSO6054A (6000 Series MSO) oscilloscope - SCPI-over-VISA plugin implementation.
+ * @author  Scope framework
+ * @date    2026
+ * @note    MISRA C++:2023-aligned; Allman braces; see docs/Coding_Standard.md.
+ */
+
 #include "MSO6054APlugin.h"
 #include "VisaHelper.h"
 

@@ -1,11 +1,11 @@
-/*============================================================================
- *  RTO2064Plugin.cpp - Rohde & Schwarz RTO2064 oscilloscope plugin.
- *  SCPI over VISA (direct), one session per scope, limits embedded.
- *
- *  Dialect: R&S User Manual remote-control chapter. Commands are exercised
- *  against the MockVisa emulator; ranges/commands tagged TODO(manual) must be
- *  verified against the RTM3000 User Manual once placed under manuals/RTO2064/.
- *==========================================================================*/
+/**
+ * @file    RTO2064Plugin.cpp
+ * @brief   Rohde & Schwarz RTO2064 (RTO2000) oscilloscope - SCPI-over-VISA plugin implementation.
+ * @author  Scope framework
+ * @date    2026
+ * @note    MISRA C++:2023-aligned; Allman braces; see docs/Coding_Standard.md.
+ */
+
 #include "RTO2064Plugin.h"
 #include "VisaHelper.h" // inline S_Scope_ConnectionConfig::toVisaResourceString()
 

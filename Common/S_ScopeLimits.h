@@ -1,25 +1,11 @@
-/*=============================================================================
- *  S_ScopeLimits.h - INTERNAL per-model limits of the oscilloscope fleet.
- *
- *  *** THIS HEADER MUST NEVER BE SHIPPED TO END USERS. ***
- *
- *  One row per model. This header provides the S_ScopeLimits struct + the
- *  shared ScopeShared constants (used by every model plugin), plus a model
- *  CATALOG. The real model plugins are self-contained: each EMBEDS its own row
- *  in its constructor and does not read the catalog. The catalog exists for
- *  SimScope, which simulates any fleet member and looks its limits up by name
- *  - so getParameterRange reports identical limits for the simulated and the
- *  real instrument.
- *
- *  Adding a fleet member = a new self-contained model plugin (own functions +
- *  embedded row); optionally a catalog row here so SimScope knows it too - see
- *  docs/Adding_A_New_Model.md.
- *
- *  NOTE(manual): the numeric ranges below are seeded from published datasheet
- *  headline specs and standard SCPI dialects. Values tagged TODO(manual) must
- *  be verified page-by-page against each model's programming manual once the
- *  PDF is placed under manuals/<Model>/ (see the build prompt, section 1b).
- *===========================================================================*/
+/**
+ * @file    S_ScopeLimits.h
+ * @brief   INTERNAL per-model limits struct + fleet catalog (never shipped to end users).
+ * @author  Scope framework
+ * @date    2026
+ * @note    MISRA C++:2023-aligned; Allman braces; see docs/Coding_Standard.md.
+ */
+
 #ifndef S_SCOPELIMITS_H
 #define S_SCOPELIMITS_H
 

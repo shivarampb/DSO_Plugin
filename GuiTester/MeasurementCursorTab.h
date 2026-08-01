@@ -1,6 +1,11 @@
-/*============================================================================
- *  MeasurementCursorTab.h - automatic measurements table + cursor controls.
- *==========================================================================*/
+/**
+ * @file    MeasurementCursorTab.h
+ * @brief   Measurements & Cursors tab - results table and cursor controls.
+ * @author  Scope framework
+ * @date    2026
+ * @note    MISRA C++:2023-aligned; Allman braces; see docs/Coding_Standard.md.
+ */
+
 #ifndef MEASUREMENTCURSORTAB_H
 #define MEASUREMENTCURSORTAB_H
 

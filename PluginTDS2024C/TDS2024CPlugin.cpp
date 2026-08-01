@@ -1,11 +1,11 @@
-/*============================================================================
- *  TDS2024CPlugin.cpp - Tektronix TDS2024C oscilloscope plugin implementation.
- *  SCPI over VISA (direct), one session per scope, limits embedded.
- *
- *  Dialect: Tektronix Programmer Manual. Commands are exercised against the
- *  MockVisa emulator; ranges/commands tagged TODO(manual) must be verified
- *  against the MDO3 Series Programmer Manual once placed under manuals/TDS2024C/.
- *==========================================================================*/
+/**
+ * @file    TDS2024CPlugin.cpp
+ * @brief   Tektronix TDS2024C (TDS2000C) oscilloscope - SCPI-over-VISA plugin implementation.
+ * @author  Scope framework
+ * @date    2026
+ * @note    MISRA C++:2023-aligned; Allman braces; see docs/Coding_Standard.md.
+ */
+
 #include "TDS2024CPlugin.h"
 #include "VisaHelper.h" // inline S_Scope_ConnectionConfig::toVisaResourceString()
 

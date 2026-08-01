@@ -1,7 +1,11 @@
-/*============================================================================
- *  TesterCommon.h - shared constants and helpers for the Scope Plugin Test app.
- *  Mirrors the ELoad GuiTester's TesterCommon.h.
- *==========================================================================*/
+/**
+ * @file    TesterCommon.h
+ * @brief   Shared constants and helpers for the Scope Plugin Test app.
+ * @author  Scope framework
+ * @date    2026
+ * @note    MISRA C++:2023-aligned; Allman braces; see docs/Coding_Standard.md.
+ */
+
 #ifndef TESTERCOMMON_H
 #define TESTERCOMMON_H
 

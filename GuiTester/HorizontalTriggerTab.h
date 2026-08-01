@@ -1,6 +1,11 @@
-/*============================================================================
- *  HorizontalTriggerTab.h - timebase + edge-trigger source/slope/level/mode.
- *==========================================================================*/
+/**
+ * @file    HorizontalTriggerTab.h
+ * @brief   Horizontal & Trigger tab - timebase and edge-trigger controls.
+ * @author  Scope framework
+ * @date    2026
+ * @note    MISRA C++:2023-aligned; Allman braces; see docs/Coding_Standard.md.
+ */
+
 #ifndef HORIZONTALTRIGGERTAB_H
 #define HORIZONTALTRIGGERTAB_H
 

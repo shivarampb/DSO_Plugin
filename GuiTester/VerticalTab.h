@@ -1,6 +1,11 @@
-/*============================================================================
- *  VerticalTab.h - per-channel scale / offset / coupling / probe + Apply.
- *==========================================================================*/
+/**
+ * @file    VerticalTab.h
+ * @brief   Vertical tab - per-channel scale/offset/coupling/probe.
+ * @author  Scope framework
+ * @date    2026
+ * @note    MISRA C++:2023-aligned; Allman braces; see docs/Coding_Standard.md.
+ */
+
 #ifndef VERTICALTAB_H
 #define VERTICALTAB_H
 

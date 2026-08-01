@@ -1,11 +1,11 @@
-/*============================================================================
- *  MDO34Plugin.cpp - Tektronix MDO34 oscilloscope plugin implementation.
- *  SCPI over VISA (direct), one session per scope, limits embedded.
- *
- *  Dialect: Tektronix Programmer Manual. Commands are exercised against the
- *  MockVisa emulator; ranges/commands tagged TODO(manual) must be verified
- *  against the MDO3 Series Programmer Manual once placed under manuals/MDO34/.
- *==========================================================================*/
+/**
+ * @file    MDO34Plugin.cpp
+ * @brief   Tektronix MDO34 (3 Series MDO) oscilloscope - SCPI-over-VISA plugin implementation.
+ * @author  Scope framework
+ * @date    2026
+ * @note    MISRA C++:2023-aligned; Allman braces; see docs/Coding_Standard.md.
+ */
+
 #include "MDO34Plugin.h"
 #include "VisaHelper.h" // inline S_Scope_ConnectionConfig::toVisaResourceString()
 

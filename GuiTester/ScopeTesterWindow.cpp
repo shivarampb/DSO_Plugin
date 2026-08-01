@@ -1,6 +1,11 @@
-/*============================================================================
- *  ScopeTesterWindow.cpp
- *==========================================================================*/
+/**
+ * @file    ScopeTesterWindow.cpp
+ * @brief   Main window implementation - tab composition, status, smoke/screenshot.
+ * @author  Scope framework
+ * @date    2026
+ * @note    MISRA C++:2023-aligned; Allman braces; see docs/Coding_Standard.md.
+ */
+
 #include "ScopeTesterWindow.h"
 #include "TesterCommon.h"
 

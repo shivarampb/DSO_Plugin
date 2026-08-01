@@ -1,6 +1,11 @@
-/*============================================================================
- *  VerticalTab.cpp
- *==========================================================================*/
+/**
+ * @file    VerticalTab.cpp
+ * @brief   Vertical tab implementation.
+ * @author  Scope framework
+ * @date    2026
+ * @note    MISRA C++:2023-aligned; Allman braces; see docs/Coding_Standard.md.
+ */
+
 #include "VerticalTab.h"
 #include "TesterCommon.h"
 

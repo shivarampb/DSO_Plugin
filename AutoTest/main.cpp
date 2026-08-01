@@ -1,12 +1,11 @@
-/*============================================================================
- *  AutoTest/main.cpp - console end-to-end suite for the Scope framework.
- *
- *  Exit code = number of failed checks (0 = all pass), so CI can gate on it.
- *  Runs with zero hardware: SimScope synthesizes waveforms with no VISA, and
- *  the real model plugins route VISA to the bundled MockVisa.
- *
- *  Usage:  AutoTest [pluginDir]      (default: ./plugins)
- *==========================================================================*/
+/**
+ * @file    main.cpp
+ * @brief   Console end-to-end test suite for the Scope framework (exit code = failures).
+ * @author  Scope framework
+ * @date    2026
+ * @note    MISRA C++:2023-aligned; Allman braces; see docs/Coding_Standard.md.
+ */
+
 #include <QCoreApplication>
 #include <QString>
 #include <QThread>

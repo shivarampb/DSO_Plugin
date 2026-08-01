@@ -1,6 +1,11 @@
-/*============================================================================
- *  MeasurementCursorTab.cpp
- *==========================================================================*/
+/**
+ * @file    MeasurementCursorTab.cpp
+ * @brief   Measurements & Cursors tab implementation.
+ * @author  Scope framework
+ * @date    2026
+ * @note    MISRA C++:2023-aligned; Allman braces; see docs/Coding_Standard.md.
+ */
+
 #include "MeasurementCursorTab.h"
 #include "TesterCommon.h"
 

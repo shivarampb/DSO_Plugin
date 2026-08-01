@@ -1,9 +1,11 @@
-/*============================================================================
- *  ScopeTesterWindow.h - the "Scope Plugin Test" main window: a tab per
- *  function group (Connection / Vertical / Horizontal & Trigger / Acquisition /
- *  Waveform / Measurements & Cursors / Save) driving one instrument through
- *  CScopeManager. Mirrors the ELoad framework's ELoadTesterWindow.
- *==========================================================================*/
+/**
+ * @file    ScopeTesterWindow.h
+ * @brief   Main window declaration - composes the function-group tabs.
+ * @author  Scope framework
+ * @date    2026
+ * @note    MISRA C++:2023-aligned; Allman braces; see docs/Coding_Standard.md.
+ */
+
 #ifndef SCOPETESTERWINDOW_H
 #define SCOPETESTERWINDOW_H
 

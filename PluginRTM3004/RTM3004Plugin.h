@@ -1,18 +1,11 @@
-/*============================================================================
- *  RTM3004Plugin.h
- *
- *  Rohde & Schwarz RTM3004 (RTM3000) oscilloscope plugin - a complete,
- *  self-contained CIScopePlugin implementation (SCPI over VISA, direct
- *  linkage). One VISA session per scope; the model's limits are embedded
- *  (m_limits).
- *
- *  Dialect: R&S User Manual remote-control chapter (CHANnel<n>:..., TIMebase:...,
- *  TRIGger:A:..., ACQuire:..., CHANnel<n>:DATA?/:DATA:HEADer?). Commands are
- *  exercised against the mock emulator; ranges/commands tagged TODO(manual)
- *  until the RTM3000 User Manual is placed under manuals/RTM3004/.
- *
- *  \author  Scope framework
- *==========================================================================*/
+/**
+ * @file    RTM3004Plugin.h
+ * @brief   Rohde & Schwarz RTM3004 (RTM3000) oscilloscope - self-contained CIScopePlugin plugin.
+ * @author  Scope framework
+ * @date    2026
+ * @note    MISRA C++:2023-aligned; Allman braces; see docs/Coding_Standard.md.
+ */
+
 #ifndef RTM3004PLUGIN_H
 #define RTM3004PLUGIN_H
 

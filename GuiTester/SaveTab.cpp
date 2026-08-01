@@ -1,6 +1,11 @@
-/*============================================================================
- *  SaveTab.cpp
- *==========================================================================*/
+/**
+ * @file    SaveTab.cpp
+ * @brief   Save / Screenshot tab implementation.
+ * @author  Scope framework
+ * @date    2026
+ * @note    MISRA C++:2023-aligned; Allman braces; see docs/Coding_Standard.md.
+ */
+
 #include "SaveTab.h"
 #include "TesterCommon.h"
 

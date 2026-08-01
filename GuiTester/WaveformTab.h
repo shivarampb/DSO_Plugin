@@ -1,6 +1,11 @@
-/*============================================================================
- *  WaveformTab.h - live volts-vs-time plot with a fetch / stream control.
- *==========================================================================*/
+/**
+ * @file    WaveformTab.h
+ * @brief   Waveform tab - live plot with fetch/stream control.
+ * @author  Scope framework
+ * @date    2026
+ * @note    MISRA C++:2023-aligned; Allman braces; see docs/Coding_Standard.md.
+ */
+
 #ifndef WAVEFORMTAB_H
 #define WAVEFORMTAB_H
 

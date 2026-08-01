@@ -1,11 +1,11 @@
-/*============================================================================
- *  TDS1012BPlugin.cpp - Tektronix TDS1012B oscilloscope plugin implementation.
- *  SCPI over VISA (direct), one session per scope, limits embedded.
- *
- *  Dialect: Tektronix Programmer Manual. Commands are exercised against the
- *  MockVisa emulator; ranges/commands tagged TODO(manual) must be verified
- *  against the MDO3 Series Programmer Manual once placed under manuals/TDS1012B/.
- *==========================================================================*/
+/**
+ * @file    TDS1012BPlugin.cpp
+ * @brief   Tektronix TDS1012B (TDS1000B) oscilloscope - SCPI-over-VISA plugin implementation.
+ * @author  Scope framework
+ * @date    2026
+ * @note    MISRA C++:2023-aligned; Allman braces; see docs/Coding_Standard.md.
+ */
+
 #include "TDS1012BPlugin.h"
 #include "VisaHelper.h" // inline S_Scope_ConnectionConfig::toVisaResourceString()
 

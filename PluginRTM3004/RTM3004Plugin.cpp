@@ -1,11 +1,11 @@
-/*============================================================================
- *  RTM3004Plugin.cpp - Rohde & Schwarz RTM3004 oscilloscope plugin.
- *  SCPI over VISA (direct), one session per scope, limits embedded.
- *
- *  Dialect: R&S User Manual remote-control chapter. Commands are exercised
- *  against the MockVisa emulator; ranges/commands tagged TODO(manual) must be
- *  verified against the RTM3000 User Manual once placed under manuals/RTM3004/.
- *==========================================================================*/
+/**
+ * @file    RTM3004Plugin.cpp
+ * @brief   Rohde & Schwarz RTM3004 (RTM3000) oscilloscope - SCPI-over-VISA plugin implementation.
+ * @author  Scope framework
+ * @date    2026
+ * @note    MISRA C++:2023-aligned; Allman braces; see docs/Coding_Standard.md.
+ */
+
 #include "RTM3004Plugin.h"
 #include "VisaHelper.h" // inline S_Scope_ConnectionConfig::toVisaResourceString()
 

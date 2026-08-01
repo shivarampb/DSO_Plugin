@@ -1,18 +1,11 @@
-/*============================================================================
- *  WaveSurfer42XsPlugin.h
- *
- *  Keysight (Agilent) InfiniiVision 2000 X-Series oscilloscope plugin - a
- *  complete, self-contained CIScopePlugin (SCPI over VISA, direct linkage).
- *  The model's limits are copied into the embedded m_limits from the catalog
- *  at construction, so the plugin owns its own row and carries no shared base.
- *
- *  Dialect: Keysight InfiniiVision Programmer's Guide (:CHANnel<n>:...,
- *  :TIMebase:..., :TRIGger:EDGE:..., :ACQuire:..., :WAVeform:...). Commands are
- *  exercised against the mock emulator; ranges/commands tagged TODO(manual)
- *  until the Programmer's Guide is placed under manuals/WaveSurfer42Xs/.
- *
- *  \author  Scope framework
- *==========================================================================*/
+/**
+ * @file    WaveSurfer42XsPlugin.h
+ * @brief   Teledyne LeCroy WaveSurfer 42Xs oscilloscope - self-contained CIScopePlugin plugin.
+ * @author  Scope framework
+ * @date    2026
+ * @note    MISRA C++:2023-aligned; Allman braces; see docs/Coding_Standard.md.
+ */
+
 #ifndef WaveSurfer42XsPLUGIN_H
 #define WaveSurfer42XsPLUGIN_H
 

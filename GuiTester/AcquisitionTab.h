@@ -1,6 +1,11 @@
-/*============================================================================
- *  AcquisitionTab.h - acquisition mode / averages + Run / Stop / Single.
- *==========================================================================*/
+/**
+ * @file    AcquisitionTab.h
+ * @brief   Acquisition tab - mode/averages and Run/Stop/Single.
+ * @author  Scope framework
+ * @date    2026
+ * @note    MISRA C++:2023-aligned; Allman braces; see docs/Coding_Standard.md.
+ */
+
 #ifndef ACQUISITIONTAB_H
 #define ACQUISITIONTAB_H
 

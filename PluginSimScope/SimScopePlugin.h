@@ -1,19 +1,11 @@
-/*============================================================================
- *  SimScopePlugin.h
- *
- *  SimScope - a virtual oscilloscope model plugin (no VISA, no hardware). A
- *  complete CIScopePlugin implementation that SYNTHESIZES waveforms
- *  (sine/square/ramp/noise, selectable via the resource string e.g.
- *  "SIM::MDO34"), honours the vertical / timebase / trigger / acquisition
- *  settings when generating the trace, and computes automatic measurements
- *  from the synthesized buffer.
- *
- *  It reuses the SAME S_ScopeLimits rows as the real plugins (catalog lookup
- *  by name), giving getParameterRange parity with the real plugins by
- *  construction. Mirrors the ELoad framework's SimLoad.
- *
- *  \author  Scope framework
- *==========================================================================*/
+/**
+ * @file    SimScopePlugin.h
+ * @brief   SimScope - virtual oscilloscope model (no VISA); synthesizes waveforms.
+ * @author  Scope framework
+ * @date    2026
+ * @note    MISRA C++:2023-aligned; Allman braces; see docs/Coding_Standard.md.
+ */
+
 #ifndef SIMSCOPEPLUGIN_H
 #define SIMSCOPEPLUGIN_H
 

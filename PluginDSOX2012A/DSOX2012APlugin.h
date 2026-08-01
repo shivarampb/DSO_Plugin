@@ -1,18 +1,11 @@
-/*============================================================================
- *  DSOX2012APlugin.h
- *
- *  Keysight (Agilent) InfiniiVision 2000 X-Series oscilloscope plugin - a
- *  complete, self-contained CIScopePlugin (SCPI over VISA, direct linkage).
- *  The model's limits are copied into the embedded m_limits from the catalog
- *  at construction, so the plugin owns its own row and carries no shared base.
- *
- *  Dialect: Keysight InfiniiVision Programmer's Guide (:CHANnel<n>:...,
- *  :TIMebase:..., :TRIGger:EDGE:..., :ACQuire:..., :WAVeform:...). Commands are
- *  exercised against the mock emulator; ranges/commands tagged TODO(manual)
- *  until the Programmer's Guide is placed under manuals/DSOX2012A/.
- *
- *  \author  Scope framework
- *==========================================================================*/
+/**
+ * @file    DSOX2012APlugin.h
+ * @brief   Keysight DSOX2012A (InfiniiVision 2000 X) oscilloscope - self-contained CIScopePlugin plugin.
+ * @author  Scope framework
+ * @date    2026
+ * @note    MISRA C++:2023-aligned; Allman braces; see docs/Coding_Standard.md.
+ */
+
 #ifndef DSOX2012APLUGIN_H
 #define DSOX2012APLUGIN_H
 

@@ -1,6 +1,11 @@
-/*============================================================================
- *  ConnectionTab.h - model + interface + address, Connect/Disconnect, identity.
- *==========================================================================*/
+/**
+ * @file    ConnectionTab.h
+ * @brief   Connection tab - model/interface/address, Connect/Disconnect, identity.
+ * @author  Scope framework
+ * @date    2026
+ * @note    MISRA C++:2023-aligned; Allman braces; see docs/Coding_Standard.md.
+ */
+
 #ifndef CONNECTIONTAB_H
 #define CONNECTIONTAB_H
 

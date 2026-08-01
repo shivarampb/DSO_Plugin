@@ -1,11 +1,11 @@
-/*============================================================================
- *  main.cpp - "Scope Plugin Test" entry point (dark-themed Qt Widgets app).
- *
- *  Usage: GuiTester [--smoke] [--screenshot <file>] [pluginDir]
- *    --smoke      : offscreen self-test (connect MDO34 via MockVisa, fetch wfm).
- *    --screenshot : render a connected window to an image (offscreen).
- *  Default pluginDir = <appDir>/../plugins.
- *==========================================================================*/
+/**
+ * @file    main.cpp
+ * @brief   "Scope Plugin Test" application entry point (dark-themed Qt Widgets).
+ * @author  Scope framework
+ * @date    2026
+ * @note    MISRA C++:2023-aligned; Allman braces; see docs/Coding_Standard.md.
+ */
+
 #include <QApplication>
 #include <QCoreApplication>
 #include <QPalette>

@@ -1,6 +1,11 @@
-/*=============================================================================
- *  CMockScopeEmulator.cpp - oscilloscope SCPI emulator for MockVisa.
- *===========================================================================*/
+/**
+ * @file    CMockScopeEmulator.cpp
+ * @brief   Oscilloscope SCPI emulator implementation for MockVisa.
+ * @author  Scope framework
+ * @date    2026
+ * @note    MISRA C++:2023-aligned; Allman braces; see docs/Coding_Standard.md.
+ */
+
 #include "CMockScopeEmulator.h"
 
 #include "S_ScopeLimits.h"

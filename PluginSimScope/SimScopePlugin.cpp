@@ -1,7 +1,11 @@
-/*============================================================================
- *  SimScopePlugin.cpp - virtual oscilloscope model (no VISA, no hardware).
- *  Synthesizes waveforms and computes measurements from the synthesized buffer.
- *==========================================================================*/
+/**
+ * @file    SimScopePlugin.cpp
+ * @brief   SimScope virtual model implementation - synthesized waveforms & measurements.
+ * @author  Scope framework
+ * @date    2026
+ * @note    MISRA C++:2023-aligned; Allman braces; see docs/Coding_Standard.md.
+ */
+
 #include "SimScopePlugin.h"
 #include "VisaHelper.h" // inline S_Scope_ConnectionConfig::toVisaResourceString()
 

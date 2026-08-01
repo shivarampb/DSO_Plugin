@@ -1,6 +1,11 @@
-/*============================================================================
- *  WaveformPlot.cpp - graticule + trace painting.
- *==========================================================================*/
+/**
+ * @file    WaveformPlot.cpp
+ * @brief   Waveform plot painting (graticule + trace).
+ * @author  Scope framework
+ * @date    2026
+ * @note    MISRA C++:2023-aligned; Allman braces; see docs/Coding_Standard.md.
+ */
+
 #include "WaveformPlot.h"
 
 #include <QPainter>

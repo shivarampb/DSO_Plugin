@@ -1,18 +1,11 @@
-/*============================================================================
- *  TDS2024CPlugin.h
- *
- *  Tektronix TDS2024C (3 Series MDO) oscilloscope plugin - a complete,
- *  self-contained CIScopePlugin implementation (SCPI over VISA, direct
- *  linkage). One VISA session per scope is held in a map keyed by scope
- *  number; the model's limits are embedded in this plugin (m_limits).
- *
- *  Dialect: Tektronix Programmer Manual (CH<n>:..., HORizontal:..., TRIGger:A:...,
- *  ACQuire:..., DATa:.../WFMOutpre?/CURVe?). Commands verified against the mock
- *  emulator; hardware ranges tagged TODO(manual) until the MDO3 Series
- *  Programmer Manual is placed under manuals/TDS2024C/.
- *
- *  \author  Scope framework
- *==========================================================================*/
+/**
+ * @file    TDS2024CPlugin.h
+ * @brief   Tektronix TDS2024C (TDS2000C) oscilloscope - self-contained CIScopePlugin plugin.
+ * @author  Scope framework
+ * @date    2026
+ * @note    MISRA C++:2023-aligned; Allman braces; see docs/Coding_Standard.md.
+ */
+
 #ifndef TDS2024CPLUGIN_H
 #define TDS2024CPLUGIN_H
 

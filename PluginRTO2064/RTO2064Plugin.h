@@ -1,18 +1,11 @@
-/*============================================================================
- *  RTO2064Plugin.h
- *
- *  Rohde & Schwarz RTO2064 (RTM3000) oscilloscope plugin - a complete,
- *  self-contained CIScopePlugin implementation (SCPI over VISA, direct
- *  linkage). One VISA session per scope; the model's limits are embedded
- *  (m_limits).
- *
- *  Dialect: R&S User Manual remote-control chapter (CHANnel<n>:..., TIMebase:...,
- *  TRIGger:A:..., ACQuire:..., CHANnel<n>:DATA?/:DATA:HEADer?). Commands are
- *  exercised against the mock emulator; ranges/commands tagged TODO(manual)
- *  until the RTM3000 User Manual is placed under manuals/RTO2064/.
- *
- *  \author  Scope framework
- *==========================================================================*/
+/**
+ * @file    RTO2064Plugin.h
+ * @brief   Rohde & Schwarz RTO2064 (RTO2000) oscilloscope - self-contained CIScopePlugin plugin.
+ * @author  Scope framework
+ * @date    2026
+ * @note    MISRA C++:2023-aligned; Allman braces; see docs/Coding_Standard.md.
+ */
+
 #ifndef RTO2064PLUGIN_H
 #define RTO2064PLUGIN_H
 

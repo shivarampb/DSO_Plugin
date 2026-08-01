@@ -1,14 +1,11 @@
-/*============================================================================
- *  MockVisa.cpp - a fake VISA implementation (built as libvisa) for
- *  hardware-free development and CI.
- *
- *  Exports the standard viXxx symbols declared in <visa.h> so the model
- *  plugins, which link -lvisa exactly like against a real VISA, run with no
- *  instrument attached. Each opened session is backed by a mini oscilloscope
- *  SCPI emulator (CMockScopeEmulator). The model to emulate is taken from the
- *  resource string (the first catalog-model token); a resource containing
- *  "TIMEOUT" never answers a read.
- *==========================================================================*/
+/**
+ * @file    MockVisa.cpp
+ * @brief   Hardware-free VISA (built as libvisa) implementing the vi* ABI over the emulator.
+ * @author  Scope framework
+ * @date    2026
+ * @note    MISRA C++:2023-aligned; Allman braces; see docs/Coding_Standard.md.
+ */
+
 #include <QByteArray>
 #include <QMap>
 #include <QMutex>

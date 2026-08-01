@@ -1,18 +1,11 @@
-/*============================================================================
- *  MDO34Plugin.h
- *
- *  Tektronix MDO34 (3 Series MDO) oscilloscope plugin - a complete,
- *  self-contained CIScopePlugin implementation (SCPI over VISA, direct
- *  linkage). One VISA session per scope is held in a map keyed by scope
- *  number; the model's limits are embedded in this plugin (m_limits).
- *
- *  Dialect: Tektronix Programmer Manual (CH<n>:..., HORizontal:..., TRIGger:A:...,
- *  ACQuire:..., DATa:.../WFMOutpre?/CURVe?). Commands verified against the mock
- *  emulator; hardware ranges tagged TODO(manual) until the MDO3 Series
- *  Programmer Manual is placed under manuals/MDO34/.
- *
- *  \author  Scope framework
- *==========================================================================*/
+/**
+ * @file    MDO34Plugin.h
+ * @brief   Tektronix MDO34 (3 Series MDO) oscilloscope - self-contained CIScopePlugin plugin.
+ * @author  Scope framework
+ * @date    2026
+ * @note    MISRA C++:2023-aligned; Allman braces; see docs/Coding_Standard.md.
+ */
+
 #ifndef MDO34PLUGIN_H
 #define MDO34PLUGIN_H
 

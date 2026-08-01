@@ -1,18 +1,11 @@
-/*=============================================================================
- *  CMockScopeEmulator.h - mini oscilloscope SCPI emulator inside MockVisa.
- *
- *  DEV-ONLY (never shipped). Emulates enough of a bench oscilloscope to
- *  exercise the REAL plugin code path (SCPI over VISA) without hardware:
- *    - IEEE-488.2 common commands (*IDN?, *RST, *CLS, *OPC?, *ESR?, *STB?, *TST?)
- *    - SYST:ERR? queue semantics
- *    - a generic "header value" store so any set/get round-trips
- *    - a valid binary waveform #-block for the DATA? queries, whose matching
- *      preamble round-trips to a known synthetic sine (3 cycles, 0.4 Vpk)
- *    - a small PNG screenshot #-block
- *
- *  It recognises both the Tektronix and the IVI/Keysight/R&S dialects for the
- *  waveform + screenshot queries, so different model plugins share one mock.
- *===========================================================================*/
+/**
+ * @file    CMockScopeEmulator.h
+ * @brief   Mini oscilloscope SCPI emulator for MockVisa (dev-only; never shipped).
+ * @author  Scope framework
+ * @date    2026
+ * @note    MISRA C++:2023-aligned; Allman braces; see docs/Coding_Standard.md.
+ */
+
 #ifndef CMOCKSCOPEEMULATOR_H
 #define CMOCKSCOPEEMULATOR_H
 

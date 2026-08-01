@@ -1,8 +1,11 @@
-/*============================================================================
- *  WaveformPlot.h - a custom QWidget that paints a captured waveform
- *  (volts vs. time) over an oscilloscope-style graticule. The signature
- *  scope view of the GuiTester.
- *==========================================================================*/
+/**
+ * @file    WaveformPlot.h
+ * @brief   Custom QWidget that paints a captured waveform over a graticule.
+ * @author  Scope framework
+ * @date    2026
+ * @note    MISRA C++:2023-aligned; Allman braces; see docs/Coding_Standard.md.
+ */
+
 #ifndef WAVEFORMPLOT_H
 #define WAVEFORMPLOT_H
 
