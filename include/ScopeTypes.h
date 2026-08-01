@@ -279,13 +279,24 @@ struct S_Scope_ConnectionConfig
         memset(m_szUsbSerialNumber, 0, sizeof(m_szUsbSerialNumber));
     }
 
-    // Convenience: build from an explicit VISA resource string.
+    /**
+     * @brief  Store an explicit VISA resource string on this configuration,
+     *         which takes precedence over the protocol-specific fields.
+     * @param[in] in_strResource  Full VISA resource string to copy in.
+     * @pre    None (truncated to CONN_RES_STR_SIZE if longer).
+     */
     void setResourceString(const QString& in_strResource)
     {
         const QByteArray aby = in_strResource.toLatin1();
         qstrncpy(m_szResourceString, aby.constData(), CONN_RES_STR_SIZE);
     }
 
+    /**
+     * @brief  Build the effective VISA resource string for this configuration.
+     * @return An explicit resource string if set, else one synthesized from the
+     *         protocol-specific fields. Defined in VisaHelper.h.
+     * @pre    None.
+     */
     QString toVisaResourceString() const; // implemented in VisaHelper.h
 };
 
@@ -317,6 +328,12 @@ struct S_Scope_PluginInfo
         memset(m_szMaxCoreVersion, 0, sizeof(m_szMaxCoreVersion));
     }
 
+    /**
+     * @brief  Test whether this plugin is compatible with a core version.
+     * @param[in] in_strCoreVersion  The running core version string.
+     * @return true if the version lies within [min, max] declared by the plugin.
+     * @pre    None.
+     */
     bool isCompatible(const QString& in_strCoreVersion) const
     {
         const QString strMin = QString::fromLatin1(m_szMinCoreVersion);
@@ -370,6 +387,13 @@ struct S_Scope_Capabilities
     {
     }
 
+    /**
+     * @brief  Return the per-channel capabilities for a given channel number.
+     * @param[in] in_u32Channel  1-based channel number to look up.
+     * @return The matching channel capabilities, or a default-constructed value
+     *         if the channel is not present.
+     * @pre    None.
+     */
     S_Scope_ChannelCapabilities getChannelCapabilities(U32BIT in_u32Channel) const
     {
         for (const S_Scope_ChannelCapabilities& ch : m_QlistChannels)
@@ -460,6 +484,11 @@ struct S_Scope_Waveform
     {
     }
 
+    /**
+     * @brief  Return the number of samples in the captured waveform.
+     * @return The size of the voltage vector.
+     * @pre    None.
+     */
     U32BIT pointCount() const
     {
         return static_cast<U32BIT>(m_vecVolts.size());

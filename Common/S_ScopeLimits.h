@@ -87,6 +87,13 @@ const int WAVEFORM_POINTS_COUNT = 9;
  * The model catalog. Rows seeded from datasheet headline specs; TODO(manual).
  * Column order matches the struct declaration above.
  *---------------------------------------------------------------------------*/
+/**
+ * @brief  Return the static per-model limits catalog.
+ * @param[out] out_piCount  Receives the number of rows in the catalog (may be
+ *                          nullptr if the count is not needed).
+ * @return Pointer to the first catalog row (static storage; do not free).
+ * @pre    None.
+ */
 inline const S_ScopeLimits* ScopeLimitsCatalog(int* out_piCount)
 {
     static const S_ScopeLimits s_asCatalog[] =
@@ -218,6 +225,12 @@ inline const S_ScopeLimits* ScopeLimitsCatalog(int* out_piCount)
     return s_asCatalog;
 }
 
+/**
+ * @brief  Find a model's limits row by exact model name.
+ * @param[in] in_szModelName  NUL-terminated model name to match (case-sensitive).
+ * @return Pointer to the matching catalog row, or NULL if no row matches.
+ * @pre    None.
+ */
 inline const S_ScopeLimits* ScopeFindLimits(const char* in_szModelName)
 {
     int iCount = 0;
