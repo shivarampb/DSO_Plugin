@@ -24,6 +24,13 @@
 
 #include "ScopeManager.h"
 
+/**
+ * @brief  Build the main window: load plugins, create the tab set, wire tab
+ *         signals, and start with the operation tabs disabled.
+ * @param[in] in_strPluginDir  Directory scanned for plugin libraries.
+ * @param[in] parent           Parent widget, or nullptr for a top-level window.
+ * @pre    None.
+ */
 ScopeTesterWindow::ScopeTesterWindow(const QString& in_strPluginDir, QWidget* parent) : QMainWindow(parent)
 {
     setWindowTitle(QStringLiteral("Scope Plugin Test"));
@@ -64,6 +71,12 @@ ScopeTesterWindow::ScopeTesterWindow(const QString& in_strPluginDir, QWidget* pa
     resize(880, 680);
 }
 
+/**
+ * @brief  Enable or disable every operation tab in one call (locked until a
+ *         scope is connected).
+ * @param[in] in_bEnabled  true to enable the operation tabs, false to lock them.
+ * @pre    None.
+ */
 void ScopeTesterWindow::setOperationTabsEnabled(bool in_bEnabled)
 {
     m_pVertical->setConnected(in_bEnabled);
@@ -74,6 +87,12 @@ void ScopeTesterWindow::setOperationTabsEnabled(bool in_bEnabled)
     m_pSave->setConnected(in_bEnabled);
 }
 
+/**
+ * @brief  Slot: on connect, unlock the operation tabs and show the connected
+ *         model in the status bar.
+ * @param[in] in_strModel  Model name reported by the connection tab.
+ * @pre    None.
+ */
 void ScopeTesterWindow::onConnected(const QString& in_strModel)
 {
     setOperationTabsEnabled(true);
@@ -81,6 +100,11 @@ void ScopeTesterWindow::onConnected(const QString& in_strModel)
     m_pTabs->setCurrentWidget(m_pVertical);
 }
 
+/**
+ * @brief  Slot: on disconnect, lock the operation tabs and return to the
+ *         connection tab.
+ * @pre    None.
+ */
 void ScopeTesterWindow::onDisconnected()
 {
     setOperationTabsEnabled(false);
@@ -88,11 +112,22 @@ void ScopeTesterWindow::onDisconnected()
     m_pTabs->setCurrentWidget(m_pConnection);
 }
 
+/**
+ * @brief  Slot: show a transient log message from any tab in the status bar.
+ * @param[in] in_strText  Message to display.
+ * @pre    None.
+ */
 void ScopeTesterWindow::onLog(const QString& in_strText)
 {
     statusBar()->showMessage(in_strText, 4000);
 }
 
+/**
+ * @brief  Headless smoke test: load, connect to the mock MDO34, capture one
+ *         waveform, then tear down.
+ * @return 0 on success; a small non-zero code identifying the failed step.
+ * @pre    Plugins and MockVisa are available on the load path.
+ */
 int ScopeTesterWindow::runSmokeTest()
 {
     CScopeManager& mgr = CScopeManager::instance();
@@ -114,6 +149,13 @@ int ScopeTesterWindow::runSmokeTest()
     return ok ? 0 : 3;
 }
 
+/**
+ * @brief  Connect to the mock MDO34, capture a waveform, render the window and
+ *         save a screenshot image to disk.
+ * @param[in] in_strPath  Output image file path.
+ * @return 0 on success; a small non-zero code identifying the failed step.
+ * @pre    Plugins and MockVisa are available on the load path.
+ */
 int ScopeTesterWindow::screenshotTo(const QString& in_strPath)
 {
     CScopeManager& mgr = CScopeManager::instance();

@@ -151,6 +151,14 @@ ScopeError CDSOX2012APlugin::visaError(ViStatus st, const QString& ctx)
                           .arg(ctx)
                           .arg(static_cast<quint32>(st), 8, 16, QLatin1Char('0')));
 }
+/**
+ * @brief  Append a newline terminator to a SCPI command and write it over VISA.
+ * @param[in] s    1-based scope slot.
+ * @param[in] cmd  SCPI command bytes without a terminator.
+ * @return SUCCESS; NOT_CONNECTED if the slot is not open; a mapped VISA error
+ *         if viWrite fails.
+ * @pre    The scope slot must be connected (see connect()).
+ */
 ScopeError CDSOX2012APlugin::writeLine(U32BIT s, const QByteArray& cmd)
 {
     S_DeviceInstance* d = dev(s);
@@ -169,6 +177,16 @@ ScopeError CDSOX2012APlugin::writeLine(U32BIT s, const QByteArray& cmd)
     }
     return ScopeError();
 }
+/**
+ * @brief  Read one newline-terminated response from the instrument, draining
+ *         all continuation chunks and stripping trailing CR/LF.
+ * @param[in]  s     1-based scope slot.
+ * @param[out] resp  Receives the response bytes (terminator removed).
+ * @return SUCCESS; NOT_CONNECTED if the slot is not open; a mapped VISA error
+ *         if viRead fails.
+ * @pre    The scope slot must be connected. Reads are capped at 16 MiB to
+ *         bound a runaway transfer.
+ */
 ScopeError CDSOX2012APlugin::readLine(U32BIT s, QByteArray& resp)
 {
     resp.clear();
@@ -204,6 +222,14 @@ ScopeError CDSOX2012APlugin::readLine(U32BIT s, QByteArray& resp)
     }
     return ScopeError();
 }
+/**
+ * @brief  Write a SCPI query then read its response (write + read helper).
+ * @param[in]  s     1-based scope slot.
+ * @param[in]  cmd   SCPI query bytes without a terminator.
+ * @param[out] resp  Receives the response bytes (terminator removed).
+ * @return SUCCESS, or the first failing step's error.
+ * @pre    The scope slot must be connected (see connect()).
+ */
 ScopeError CDSOX2012APlugin::queryLine(U32BIT s, const QByteArray& cmd, QByteArray& resp)
 {
     ScopeError e = writeLine(s, cmd);
@@ -213,6 +239,17 @@ ScopeError CDSOX2012APlugin::queryLine(U32BIT s, const QByteArray& cmd, QByteArr
     }
     return readLine(s, resp);
 }
+/**
+ * @brief  Read an IEEE-488.2 definite-length "#<w><len><payload>" block
+ *         (waveform or screenshot) with the termchar disabled during transfer.
+ * @param[in]  s        1-based scope slot.
+ * @param[out] payload  Receives the raw block payload with the header removed.
+ * @return SUCCESS; NOT_CONNECTED if closed; INVALID_RESPONSE for a missing or
+ *         malformed block header or a short payload; a mapped VISA error on
+ *         read failure.
+ * @pre    The scope slot must be connected. The termchar is restored to
+ *         enabled before returning on every path.
+ */
 ScopeError CDSOX2012APlugin::readBinaryBlock(U32BIT s, QByteArray& payload)
 {
     payload.clear();
@@ -263,6 +300,15 @@ ScopeError CDSOX2012APlugin::readBinaryBlock(U32BIT s, QByteArray& payload)
     }
     return ScopeError();
 }
+/**
+ * @brief  Write a SCPI command then poll SYST:ERR? and fail if the instrument
+ *         queued a non-zero error code.
+ * @param[in] s    1-based scope slot.
+ * @param[in] cmd  SCPI command bytes without a terminator.
+ * @return SUCCESS; INSTRUMENT_ERROR carrying the code and text if the queue is
+ *         non-empty; or the first failing transport error.
+ * @pre    The scope slot must be connected (see connect()).
+ */
 ScopeError CDSOX2012APlugin::sendChecked(U32BIT s, const QByteArray& cmd)
 {
     ScopeError e = writeLine(s, cmd);
@@ -285,6 +331,15 @@ ScopeError CDSOX2012APlugin::sendChecked(U32BIT s, const QByteArray& cmd)
     }
     return ScopeError();
 }
+/**
+ * @brief  Query the instrument and parse the reply as a floating-point number.
+ * @param[in]  s    1-based scope slot.
+ * @param[in]  cmd  SCPI query bytes without a terminator.
+ * @param[out] o    Receives the parsed value on success.
+ * @return SUCCESS; INVALID_RESPONSE if the reply is not numeric; or the query's
+ *         transport error.
+ * @pre    The scope slot must be connected (see connect()).
+ */
 ScopeError CDSOX2012APlugin::queryDouble(U32BIT s, const QByteArray& cmd, FDOUBLE& o)
 {
     QByteArray resp;
@@ -303,6 +358,18 @@ ScopeError CDSOX2012APlugin::queryDouble(U32BIT s, const QByteArray& cmd, FDOUBL
     o = v;
     return ScopeError();
 }
+/**
+ * @brief  Range-check a value, then send "<scpi> <value>" and verify SYST:ERR?.
+ * @param[in] s     1-based scope slot.
+ * @param[in] scpi  SCPI command stem the value is appended to.
+ * @param[in] v     Value to set.
+ * @param[in] lo    Inclusive lower bound accepted for v.
+ * @param[in] hi    Inclusive upper bound accepted for v.
+ * @param[in] what  Human-readable parameter name for the range-error message.
+ * @return SUCCESS; PARAMETER_OUT_OF_RANGE if v is outside [lo, hi] (checked
+ *         before any I/O); otherwise the checked-send result.
+ * @pre    The scope slot must be connected (see connect()).
+ */
 ScopeError CDSOX2012APlugin::setDouble(U32BIT s, const char* scpi, FDOUBLE v, FDOUBLE lo, FDOUBLE hi,
                                        const char* what)
 {
@@ -315,6 +382,17 @@ ScopeError CDSOX2012APlugin::setDouble(U32BIT s, const char* scpi, FDOUBLE v, FD
     return sendChecked(s, QByteArray(scpi) + " " + fmtD(v));
 }
 
+/**
+ * @brief  Open a VISA session to the instrument, apply timeout/termination
+ *         attributes, and verify *IDN? names this model before accepting.
+ * @param[in] s  1-based scope slot to bind the session to.
+ * @param[in] c  Connection config; its resource string selects the instrument.
+ * @return SUCCESS; ALREADY_CONNECTED if the slot is live; CONNECTION_FAILED if
+ *         *IDN? does not match this model's identity token; a mapped VISA error
+ *         if resource-manager open, session open, or the IDN query fails.
+ * @pre    The scope slot must not already be connected. On any failure after
+ *         the session opens, it is closed before returning.
+ */
 ScopeError CDSOX2012APlugin::connect(U32BIT s, const S_Scope_ConnectionConfig& c)
 {
     if (dev(s) != nullptr && m_devices[s].m_bConnected)
@@ -1004,6 +1082,16 @@ ScopeError CDSOX2012APlugin::getWaveformPreamble(U32BIT s, U32BIT c, S_Scope_Wav
     o.m_dYReference = f[9].trimmed().toDouble();
     return ScopeError();
 }
+/**
+ * @brief  Fetch a channel's waveform: configure the source/format, read the
+ *         preamble and the binary data block, and scale codes to volts vs time.
+ * @param[in]  s  1-based scope slot.
+ * @param[in]  c  1-based channel number to read.
+ * @param[out] o  Receives the time (s) and voltage (V) vectors plus preamble.
+ * @return SUCCESS; INVALID_CHANNEL for an out-of-range channel; INVALID_RESPONSE
+ *         for a malformed block; otherwise a transport error.
+ * @pre    The scope slot must be connected and the channel enabled.
+ */
 ScopeError CDSOX2012APlugin::readWaveform(U32BIT s, U32BIT c, S_Scope_Waveform& o)
 {
     if (!validChannel(c))

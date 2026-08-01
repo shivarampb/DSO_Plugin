@@ -24,10 +24,18 @@ const double WFM_AMPL_V = 0.4;  /* 0-peak amplitude in volts            */
 const double WFM_CYCLES = 3.0;  /* cycles across the record             */
 } // namespace
 
+/**
+ * @brief  Construct an emulator that impersonates a specific scope model.
+ * @param[in] in_strModelName  Catalog model name (e.g. "MDO34"); selects the
+ *                             manufacturer and the *IDN? token to answer with.
+ * @pre    None. An unknown model name is tolerated: the manufacturer defaults
+ *         to "Mock" and the IDN match token to the model name itself.
+ */
 CMockScopeEmulator::CMockScopeEmulator(const QString& in_strModelName)
     : m_strModelName(in_strModelName), m_strManufacturer(QStringLiteral("Mock")),
       m_strIdnMatch(in_strModelName), m_iWfmPoints(1000), m_strMeasType(QStringLiteral("FREQ"))
 {
+    // Overlay the catalog manufacturer/IDN token when the model is known.
     const S_ScopeLimits* p = ScopeFindLimits(in_strModelName.toLatin1().constData());
     if (p != nullptr)
     {
@@ -36,19 +44,39 @@ CMockScopeEmulator::CMockScopeEmulator(const QString& in_strModelName)
     }
 }
 
+/**
+ * @brief  Build the *IDN? response for this model.
+ * @return "<manufacturer>,<model>,MOCK000001,1.0.0" — the model field is the
+ *         exact token a plugin verifies against so identity checks pass.
+ * @pre    None.
+ */
 QByteArray CMockScopeEmulator::idnString() const
 {
     // Use the exact IDN token the plugin verifies against as the model field.
     return QStringLiteral("%1,%2,MOCK000001,1.0.0").arg(m_strManufacturer, m_strIdnMatch).toLatin1();
 }
 
+/**
+ * @brief  Queue an error so a subsequent SYST:ERR? pops it (FIFO), matching
+ *         IEEE-488.2 error-queue semantics.
+ * @param[in] in_iCode     SCPI error number to report.
+ * @param[in] in_szMessage NUL-terminated human-readable error text.
+ * @pre    None.
+ */
 void CMockScopeEmulator::pushError(int in_iCode, const char* in_szMessage)
 {
     m_lstErrors.append(qMakePair(in_iCode, QByteArray(in_szMessage)));
 }
 
-/* A plausible decoded-frame readout for the current serial-bus type, so the
- * readBusDecode() path returns realistic content with no hardware. */
+/**
+ * @brief  Synthesize a plausible decoded-frame readout for the currently
+ *         selected serial-bus type, so the readBusDecode() path returns
+ *         realistic content with no hardware attached.
+ * @return A one-line decode string for I2C/SPI/UART/CAN/LIN; "BUS: (no frames)"
+ *         when the bus type is unset or unrecognized.
+ * @pre    None. The bus type is whatever a prior BUS:TYPE/MODE set stored
+ *         (see HandleLine); an empty type yields the no-frames default.
+ */
 QByteArray CMockScopeEmulator::busDecodeString() const
 {
     const QString t = m_strBusType.toUpper();
@@ -76,8 +104,18 @@ QByteArray CMockScopeEmulator::busDecodeString() const
     return "BUS: (no frames)";
 }
 
-/* Automatic-measurement values derived from the same 3-cycle, 0.4 Vpk sine the
- * waveform block encodes, so measured values are self-consistent with the trace. */
+/**
+ * @brief  Compute an automatic-measurement value for the given type, derived
+ *         from the same 3-cycle, 0.4 Vpk sine the waveform block encodes, so
+ *         measured values stay self-consistent with the returned trace.
+ * @param[in] in_strType  Measurement mnemonic (case-insensitive), e.g. "VPP",
+ *                        "FREQ", "RMS"; SCPI dialect aliases are accepted.
+ * @return The measured value in the natural unit (volts, seconds, hertz, or
+ *         percent); frequency is returned for an unrecognized type.
+ * @pre    None.
+ * @note   Match order is significant: max/min variants (including R&S UPEak /
+ *         LPEak) are tested before the generic PEAK->Vpp mapping.
+ */
 double CMockScopeEmulator::measurementValue(const QString& in_strType) const
 {
     const int n = (m_iWfmPoints > 0) ? m_iWfmPoints : 1000;
@@ -134,10 +172,19 @@ double CMockScopeEmulator::measurementValue(const QString& in_strType) const
     return freq; // default
 }
 
-/*-----------------------------------------------------------------------------
- * Build a binary waveform #-block (WORD, signed 16-bit, big-endian) of a
- * 3-cycle sine, and the matching IVI-style preamble CSV.
- *---------------------------------------------------------------------------*/
+/**
+ * @brief  Build a binary waveform #-block (WORD, signed 16-bit, big-endian) of
+ *         a 3-cycle sine together with the matching IVI-style preamble CSV.
+ * @param[in]  in_iPoints          Requested record length; values <= 0 fall
+ *                                 back to 1000 points.
+ * @param[out] out_abyPreambleCsv  Receives the preamble CSV
+ *                                 (format,type,points,count,xInc,xOrig,xRef,
+ *                                 yInc,yOrig,yRef) describing the same block.
+ * @return An IEEE-488.2 definite-length "#<w><len><payload>\n" waveform block.
+ * @pre    None.
+ * @note   The preamble and payload are generated from one set of synthetic
+ *         constants, so parsing the preamble reconstructs the encoded signal.
+ */
 QByteArray CMockScopeEmulator::buildWaveformBlock(int in_iPoints, QByteArray& out_abyPreambleCsv)
 {
     const int n = (in_iPoints > 0) ? in_iPoints : 1000;
@@ -173,6 +220,13 @@ QByteArray CMockScopeEmulator::buildWaveformBlock(int in_iPoints, QByteArray& ou
     return block;
 }
 
+/**
+ * @brief  Build a screenshot response as an IEEE-488.2 definite-length block
+ *         wrapping a minimal valid 1x1 PNG.
+ * @return "#<w><len><png>\n" so the plugin's binary-block reader extracts a
+ *         decodable PNG image.
+ * @pre    None.
+ */
 QByteArray CMockScopeEmulator::buildScreenshotPng()
 {
     // minimal valid 1x1 PNG
@@ -189,9 +243,18 @@ QByteArray CMockScopeEmulator::buildScreenshotPng()
     return block;
 }
 
-/*-----------------------------------------------------------------------------
- * Handle one SCPI line.
- *---------------------------------------------------------------------------*/
+/**
+ * @brief  Handle one SCPI line: dispatch common commands, waveform/screenshot
+ *         blocks, measurements and serial-bus decode, else store or echo values.
+ * @param[in]  in_abyLine     One raw SCPI line (leading/trailing space and the
+ *                            terminator are trimmed internally).
+ * @param[out] out_abyResponse For a query, receives the reply (terminated);
+ *                            left untouched for a set command with no response.
+ * @pre    None. An empty line is ignored. Setter/getter pairs are matched by
+ *         header, so a query returns the value a prior matching set stored.
+ * @note   Dispatch order is deliberate: more specific matches (preamble before
+ *         data block, screenshot before generic DATA?) are tested first.
+ */
 void CMockScopeEmulator::HandleLine(const QByteArray& in_abyLine, QByteArray& out_abyResponse)
 {
     const QByteArray line = in_abyLine.trimmed();

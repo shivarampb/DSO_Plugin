@@ -61,6 +61,12 @@ QMutex g_mtx;
 QMap<ViSession, S_Session*> g_sessions;
 ViSession g_next = 1000;
 
+/**
+ * @brief  Pick the catalog model whose name appears in a resource string.
+ * @param[in] in_strResource  VISA resource string to scan (case-insensitive).
+ * @return The matched model name; "MDO34" when nothing in the catalog matches.
+ * @pre    None.
+ */
 QString modelFromResource(const QString& in_strResource)
 {
     int iCount = 0;
@@ -76,12 +82,24 @@ QString modelFromResource(const QString& in_strResource)
     return QStringLiteral("MDO34");
 }
 
+/**
+ * @brief  Enumerate the mock instrument resources advertised by viFindRsrc.
+ * @return Fixed list: MDO34, RTM3004, and a TIMEOUT resource that forces a
+ *         VI_ERROR_TMO on read for error-path testing.
+ * @pre    None.
+ */
 QStringList mockResourceList()
 {
     return QStringList() << QStringLiteral("MOCK0::MDO34::INSTR") << QStringLiteral("MOCK0::RTM3004::INSTR")
                          << QStringLiteral("MOCK0::TIMEOUT::INSTR");
 }
 
+/**
+ * @brief  Look up a live session record by its VISA handle.
+ * @param[in] vi  Session/find-list handle to resolve.
+ * @return The session pointer, or nullptr if the handle is unknown.
+ * @pre    Caller holds g_mtx.
+ */
 S_Session* find(ViSession vi)
 {
     return g_sessions.value(vi, nullptr);
@@ -91,6 +109,12 @@ S_Session* find(ViSession vi)
 
 extern "C"
 {
+    /**
+     * @brief  Open the default VISA resource manager (mock).
+     * @param[out] vi  Receives the new resource-manager session handle.
+     * @return VI_SUCCESS; VI_ERROR_INV_OBJECT if @p vi is null.
+     * @pre    None.
+     */
     MOCKVISA_EXPORT ViStatus viOpenDefaultRM(ViPSession vi)
     {
         if (vi == nullptr)
@@ -105,6 +129,15 @@ extern "C"
         return VI_SUCCESS;
     }
 
+    /**
+     * @brief  Open a session to a mock instrument named by its resource string.
+     * @param[in]  sesn  A resource-manager session from viOpenDefaultRM.
+     * @param[in]  name  VISA resource string; a "TIMEOUT" resource opens a session
+     *                   whose reads always time out, else an emulator is created.
+     * @param[out] vi    Receives the new instrument session handle.
+     * @return VI_SUCCESS; VI_ERROR_INV_OBJECT for a null argument or unknown @p sesn.
+     * @pre    @p sesn must be a valid resource-manager session.
+     */
     MOCKVISA_EXPORT ViStatus viOpen(ViSession sesn, const ViChar* name, ViAccessMode, ViUInt32, ViPSession vi)
     {
         if (vi == nullptr || name == nullptr)
@@ -134,6 +167,12 @@ extern "C"
         return VI_SUCCESS;
     }
 
+    /**
+     * @brief  Close a session (RM, instrument, or find-list) and free its state.
+     * @param[in] vi  Handle to close.
+     * @return VI_SUCCESS; VI_ERROR_INV_OBJECT if the handle is unknown.
+     * @pre    None.
+     */
     MOCKVISA_EXPORT ViStatus viClose(ViObject vi)
     {
         QMutexLocker lock(&g_mtx);
@@ -146,6 +185,17 @@ extern "C"
         return VI_SUCCESS;
     }
 
+    /**
+     * @brief  Write bytes to a mock instrument, dispatching each SCPI line to the
+     *         emulator and queuing any responses for a later viRead.
+     * @param[in]  vi      Instrument session handle.
+     * @param[in]  buf     Bytes to write (may contain multiple newline-split lines).
+     * @param[in]  cnt     Number of bytes in @p buf.
+     * @param[out] retCnt  Receives the byte count reported as written (== cnt).
+     * @return VI_SUCCESS; VI_ERROR_INV_OBJECT if not an instrument session. A
+     *         timeout session accepts the write but produces no response.
+     * @pre    None.
+     */
     MOCKVISA_EXPORT ViStatus viWrite(ViSession vi, ViConstBuf buf, ViUInt32 cnt, ViPUInt32 retCnt)
     {
         QMutexLocker lock(&g_mtx);
@@ -175,6 +225,18 @@ extern "C"
         return VI_SUCCESS;
     }
 
+    /**
+     * @brief  Read queued response bytes from a mock instrument, honoring the
+     *         termchar-enable attribute for line- vs block-oriented transfers.
+     * @param[in]  vi      Instrument session handle.
+     * @param[out] buf     Receives up to @p cnt bytes.
+     * @param[in]  cnt     Capacity of @p buf.
+     * @param[out] retCnt  Receives the number of bytes copied.
+     * @return VI_SUCCESS / VI_SUCCESS_TERM_CHAR / VI_SUCCESS_MAX_CNT per the read;
+     *         VI_ERROR_TMO if the session is a timeout resource or has no data;
+     *         VI_ERROR_INV_OBJECT if not an instrument session.
+     * @pre    None. When termchar is enabled the read stops at the first newline.
+     */
     MOCKVISA_EXPORT ViStatus viRead(ViSession vi, ViBuf buf, ViUInt32 cnt, ViPUInt32 retCnt)
     {
         QMutexLocker lock(&g_mtx);
@@ -220,6 +282,15 @@ extern "C"
         return status;
     }
 
+    /**
+     * @brief  Set a session attribute; only VI_ATTR_TERMCHAR_EN is significant.
+     * @param[in] vi         Session handle.
+     * @param[in] attrName   Attribute id.
+     * @param[in] attrValue  New value (0 disables termchar, non-zero enables).
+     * @return VI_SUCCESS; VI_ERROR_INV_OBJECT if the handle is unknown. Unhandled
+     *         attributes are accepted and ignored.
+     * @pre    None.
+     */
     MOCKVISA_EXPORT ViStatus viSetAttribute(ViObject vi, ViAttr attrName, ViAttrState attrValue)
     {
         QMutexLocker lock(&g_mtx);
@@ -235,6 +306,15 @@ extern "C"
         return VI_SUCCESS;
     }
 
+    /**
+     * @brief  Get a session attribute; only VI_ATTR_TERMCHAR_EN is supported.
+     * @param[in]  vi         Session handle.
+     * @param[in]  attrName   Attribute id.
+     * @param[out] attrValue  Receives the attribute value.
+     * @return VI_SUCCESS; VI_ERROR_INV_OBJECT for a null buffer or unknown handle;
+     *         VI_ERROR_NSUP_ATTR for an unsupported attribute.
+     * @pre    None.
+     */
     MOCKVISA_EXPORT ViStatus viGetAttribute(ViObject vi, ViAttr attrName, void* attrValue)
     {
         QMutexLocker lock(&g_mtx);
@@ -251,6 +331,16 @@ extern "C"
         return VI_ERROR_NSUP_ATTR;
     }
 
+    /**
+     * @brief  Begin a resource search, returning the first match and a find list.
+     * @param[in]  sesn      Resource-manager session.
+     * @param[out] findList  Receives a find-list handle for viFindNext.
+     * @param[out] retcnt    Receives the total number of matches.
+     * @param[out] desc      Receives the first resource string.
+     * @return VI_SUCCESS; VI_ERROR_INV_OBJECT for a null argument or bad @p sesn.
+     * @pre    @p sesn must be a valid resource-manager session. The expression
+     *         argument is ignored; the full mock resource list is always returned.
+     */
     MOCKVISA_EXPORT ViStatus viFindRsrc(ViSession sesn, const ViChar*, ViFindList* findList, ViPUInt32 retcnt,
                                         ViChar desc[])
     {
@@ -272,6 +362,14 @@ extern "C"
         return VI_SUCCESS;
     }
 
+    /**
+     * @brief  Return the next resource from a find list created by viFindRsrc.
+     * @param[in]  findList  Find-list handle.
+     * @param[out] desc      Receives the next resource string.
+     * @return VI_SUCCESS; VI_ERROR_RSRC_NFOUND once the list is exhausted;
+     *         VI_ERROR_INV_OBJECT for a bad handle or null buffer.
+     * @pre    @p findList must come from viFindRsrc.
+     */
     MOCKVISA_EXPORT ViStatus viFindNext(ViFindList findList, ViChar desc[])
     {
         QMutexLocker lock(&g_mtx);
@@ -289,6 +387,13 @@ extern "C"
         return VI_SUCCESS;
     }
 
+    /**
+     * @brief  Render a human-readable description for a VISA status code.
+     * @param[in]  status  Status code to describe.
+     * @param[out] desc    Receives the description (max 256 bytes).
+     * @return VI_SUCCESS; VI_ERROR_INV_OBJECT if @p desc is null.
+     * @pre    None.
+     */
     MOCKVISA_EXPORT ViStatus viStatusDesc(ViObject, ViStatus status, ViChar desc[])
     {
         if (desc == nullptr)
@@ -317,6 +422,12 @@ extern "C"
         return VI_SUCCESS;
     }
 
+    /**
+     * @brief  Discard any buffered response bytes for a session.
+     * @param[in] vi  Session handle.
+     * @return VI_SUCCESS; VI_ERROR_INV_OBJECT if the handle is unknown.
+     * @pre    None.
+     */
     MOCKVISA_EXPORT ViStatus viClear(ViSession vi)
     {
         QMutexLocker lock(&g_mtx);

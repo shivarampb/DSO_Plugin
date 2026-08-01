@@ -17,7 +17,15 @@ namespace
 {
 const double PI = 3.14159265358979323846;
 
-/* value at fractional phase [0,1) for a given shape, 0-peak amplitude 1.0 */
+/**
+ * @brief  Evaluate a normalized waveform shape at a fractional phase.
+ * @param[in] in_eShape  Shape selector: 0=SINE, 1=SQUARE, 2=RAMP, 3=NOISE.
+ * @param[in] in_dPhase  Fractional phase in [0,1) within one period.
+ * @return The sample value with 0-peak amplitude 1.0; 0.0 for an unknown shape.
+ * @pre    None. NOISE is a deterministic pseudo-random function of the phase,
+ *         so repeated reads at the same phase yield identical samples and
+ *         measurements are reproducible.
+ */
 double shapeValue(int in_eShape, double in_dPhase)
 {
     switch (in_eShape)
@@ -106,6 +114,14 @@ const CSimScopePlugin::S_SimDevice* CSimScopePlugin::dev(U32BIT s) const
     auto it = m_devices.find(s);
     return (it == m_devices.end()) ? nullptr : &it.value();
 }
+/**
+ * @brief  Test whether a channel index is valid for a connected device.
+ * @param[in] d  Device record (may be nullptr).
+ * @param[in] c  1-based channel number to validate.
+ * @return true when the device and its limits exist and c is within the
+ *         device's analog-channel count; false otherwise.
+ * @pre    None.
+ */
 bool CSimScopePlugin::validChannel(const S_SimDevice* d, U32BIT c) const
 {
     return d != nullptr && d->m_pLimits != nullptr && c >= 1 &&
@@ -115,6 +131,18 @@ bool CSimScopePlugin::validChannel(const S_SimDevice* d, U32BIT c) const
 /*============================================================================
  *  Connection
  *==========================================================================*/
+/**
+ * @brief  Open a virtual scope on a scope slot, selecting the emulated model
+ *         and waveform shape from the resource string.
+ * @param[in] s  1-based scope slot to bind this virtual device to.
+ * @param[in] c  Connection config; its resource string carries the model name
+ *               (matched case-insensitively against the catalog) and an
+ *               optional SQUARE/RAMP/NOISE shape token (default SINE).
+ * @return SUCCESS; ALREADY_CONNECTED if the slot already holds a live device.
+ * @pre    The slot must not already be connected. An unrecognized model token
+ *         falls back to "MDO34"; channel state is initialized from the chosen
+ *         model's S_ScopeLimits row (channel 1 enabled, 100 mV/div, DC, 10x).
+ */
 ScopeError CSimScopePlugin::connect(U32BIT s, const S_Scope_ConnectionConfig& c)
 {
     if (dev(s) != nullptr && m_devices[s].m_bConnected)
@@ -279,6 +307,16 @@ ScopeError CSimScopePlugin::getScpiVersion(U32BIT s, QString& o)
     return ScopeError();
 }
 
+/**
+ * @brief  Report the valid range of a parameter for a channel, drawn from the
+ *         emulated model's S_ScopeLimits row so it matches the real plugin.
+ * @param[in]  s  1-based scope slot.
+ * @param[in]  c  1-based channel number (used for per-channel parameters).
+ * @param[in]  p  Parameter whose min/max/resolution is requested.
+ * @param[out] o  Receives the populated range; reset to defaults on entry.
+ * @return SUCCESS; NOT_CONNECTED if the slot has no device.
+ * @pre    The scope slot must be connected (see connect()).
+ */
 ScopeError CSimScopePlugin::getParameterRange(U32BIT s, U32BIT c, Enum_Scope_ParamId p,
                                               S_Scope_ParameterRange& o)
 {
@@ -952,6 +990,18 @@ ScopeError CSimScopePlugin::setWaveformPoints(U32BIT s, U32BIT v)
     return ScopeError();
 }
 
+/**
+ * @brief  Synthesize a channel's time/voltage trace from the device's current
+ *         vertical, timebase and coupling settings.
+ * @param[in]  d         Connected device record.
+ * @param[in]  c         1-based channel number; sets amplitude/cycle count so
+ *                       each channel is visually distinct.
+ * @param[out] out_time  Receives the time axis (seconds), length m_iWfmPoints.
+ * @param[out] out_volts Receives the voltage samples (volts), same length.
+ * @pre    d must be non-null and connected, and c a valid channel; callers
+ *         validate via validChannel() before invoking. Vpp is 5 * V/div about
+ *         the vertical offset; GND coupling forces the trace flat at 0 V.
+ */
 void CSimScopePlugin::synthesize(const S_SimDevice* d, U32BIT c, QVector<FDOUBLE>& out_time,
                                  QVector<FDOUBLE>& out_volts) const
 {
@@ -1036,6 +1086,18 @@ ScopeError CSimScopePlugin::digitizeChannel(U32BIT s, U32BIT c)
 /*============================================================================
  *  Measurements (computed from the synthesized buffer)
  *==========================================================================*/
+/**
+ * @brief  Compute an automatic measurement from the freshly synthesized trace
+ *         for a channel, so results are self-consistent with readWaveform().
+ * @param[in]  d           Connected device record.
+ * @param[in]  c           1-based channel number to measure.
+ * @param[in]  t           Measurement type to compute.
+ * @param[out] out_bValid  Set false when the record is too short (< 2 samples)
+ *                         or the type is unsupported; true otherwise.
+ * @return The measured value in its natural unit; 0.0 when out_bValid is false.
+ * @pre    d must be non-null/connected and c a valid channel (callers validate
+ *         via validChannel()). The trace is regenerated on each call.
+ */
 double CSimScopePlugin::computeMeasurement(const S_SimDevice* d, U32BIT c, Enum_Scope_MeasType t,
                                            bool& out_bValid) const
 {

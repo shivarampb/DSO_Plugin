@@ -13,6 +13,11 @@
 
 #include "ScopeTesterWindow.h"
 
+/**
+ * @brief  Apply a dark Fusion palette and stylesheet to the application.
+ * @param[in,out] app  Application whose style, palette and stylesheet are set.
+ * @pre    None.
+ */
 static void applyDarkTheme(QApplication& app)
 {
     app.setStyle(QStyleFactory::create(QStringLiteral("Fusion")));
@@ -48,6 +53,15 @@ static void applyDarkTheme(QApplication& app)
         "QPushButton:disabled { color: #6a6d70; }");
 }
 
+/**
+ * @brief  GuiTester entry point: parse arguments, then either run headless
+ *         (--smoke / --screenshot) or show the interactive window.
+ * @param[in] argc  Argument count.
+ * @param[in] argv  Supports --smoke, --screenshot <path>, and a plugins dir.
+ * @return 0 on success; the smoke/screenshot step code in headless mode, or the
+ *         Qt event-loop result for the interactive window.
+ * @pre    None.
+ */
 int main(int argc, char** argv)
 {
     bool bSmoke = false;

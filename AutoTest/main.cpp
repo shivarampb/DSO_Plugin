@@ -25,6 +25,12 @@
 static int g_iPass = 0;
 static int g_iFail = 0;
 
+/**
+ * @brief  Record a pass or a failure for a boolean assertion.
+ * @param[in] in_bCond    Condition expected to be true.
+ * @param[in] in_strWhat  Description printed (with [FAIL]) when it is false.
+ * @pre    None.
+ */
 static void checkTrue(bool in_bCond, const QString& in_strWhat)
 {
     if (in_bCond)
@@ -38,11 +44,24 @@ static void checkTrue(bool in_bCond, const QString& in_strWhat)
     }
 }
 
+/**
+ * @brief  Assert that a ScopeError denotes success.
+ * @param[in] in_e        Result to check.
+ * @param[in] in_strWhat  Description for the failure message.
+ * @pre    None.
+ */
 static void checkOk(const ScopeError& in_e, const QString& in_strWhat)
 {
     checkTrue(in_e.isSuccess(), QStringLiteral("%1 -> %2").arg(in_strWhat, in_e.toString()));
 }
 
+/**
+ * @brief  Assert that a ScopeError carries a specific error code.
+ * @param[in] in_e        Result to check.
+ * @param[in] in_eExpect  Expected error code.
+ * @param[in] in_strWhat  Description for the failure message.
+ * @pre    None.
+ */
 static void checkCode(const ScopeError& in_e, Enum_Scope_ErrorCode in_eExpect, const QString& in_strWhat)
 {
     checkTrue(in_e.code() == in_eExpect, QStringLiteral("%1 expected code %2 got %3")
@@ -51,11 +70,25 @@ static void checkCode(const ScopeError& in_e, Enum_Scope_ErrorCode in_eExpect, c
                                              .arg(static_cast<int>(in_e.code())));
 }
 
+/**
+ * @brief  Compare two doubles within a combined absolute/relative tolerance.
+ * @param[in] a       Measured value.
+ * @param[in] b       Reference value.
+ * @param[in] relTol  Relative tolerance applied to |b|.
+ * @param[in] absTol  Absolute tolerance floor.
+ * @return true if |a-b| <= absTol + relTol*|b|.
+ * @pre    None.
+ */
 static bool near(double a, double b, double relTol, double absTol)
 {
     return std::fabs(a - b) <= (absTol + relTol * std::fabs(b));
 }
 
+/**
+ * @brief  Print a section banner to delimit a group of checks.
+ * @param[in] in_szName  Section title.
+ * @pre    None.
+ */
 static void section(const char* in_szName)
 {
     std::printf("[ %s ]\n", in_szName);
@@ -64,6 +97,12 @@ static void section(const char* in_szName)
 /*----------------------------------------------------------------------------
  * Test groups
  *--------------------------------------------------------------------------*/
+/**
+ * @brief  Verify plugin discovery: the expected models load and a bad DLL is
+ *         rejected without aborting the scan.
+ * @param[in] mgr  Manager with plugins already loaded.
+ * @pre    loadPlugins() has run against the plugins directory.
+ */
 static void testDiscovery(CScopeManager& mgr)
 {
     section("Plugin discovery");
@@ -72,6 +111,11 @@ static void testDiscovery(CScopeManager& mgr)
     checkTrue(lst.contains(QStringLiteral("SimScope")), QStringLiteral("SimScope discovered"));
 }
 
+/**
+ * @brief  Exercise instance create/destroy/exists and duplicate-number handling.
+ * @param[in] mgr  Loaded manager.
+ * @pre    Plugins are loaded.
+ */
 static void testInstances(CScopeManager& mgr)
 {
     section("Instance management");
@@ -87,6 +131,12 @@ static void testInstances(CScopeManager& mgr)
     checkTrue(!mgr.instanceExists(1), QStringLiteral("instance gone after destroy"));
 }
 
+/**
+ * @brief  Drive the full SimScope API surface (connect, vertical, timebase,
+ *         trigger, acquire, synthesized waveform, measurements).
+ * @param[in] mgr  Loaded manager.
+ * @pre    Plugins are loaded.
+ */
 static void testSimApi(CScopeManager& mgr)
 {
     section("SimScope full API + synthesized waveform");
@@ -141,6 +191,12 @@ static void testSimApi(CScopeManager& mgr)
     checkOk(mgr.destroyInstance(1), QStringLiteral("destroyInstance"));
 }
 
+/**
+ * @brief  Check that per-model getParameterRange values differ as expected
+ *         across models (channel counts, timebase limits, etc.).
+ * @param[in] mgr  Loaded manager.
+ * @pre    Plugins are loaded.
+ */
 static void testRangeMatrix(CScopeManager& mgr)
 {
     section("Per-model range matrix (via SimScope model selection)");
@@ -185,6 +241,12 @@ static void testRangeMatrix(CScopeManager& mgr)
     mgr.destroyInstance(4);
 }
 
+/**
+ * @brief  Cover error returns: out-of-range, invalid scope/channel,
+ *         NOT_SUPPORTED, and the forced-timeout resource.
+ * @param[in] mgr  Loaded manager.
+ * @pre    Plugins are loaded.
+ */
 static void testErrorPaths(CScopeManager& mgr)
 {
     section("Error paths");
@@ -215,6 +277,12 @@ static void testErrorPaths(CScopeManager& mgr)
     mgr.destroyInstance(2);
 }
 
+/**
+ * @brief  Verify two simultaneous instances (SimScope + a real model) operate
+ *         independently.
+ * @param[in] mgr  Loaded manager.
+ * @pre    Plugins are loaded.
+ */
 static void testTwoInstances(CScopeManager& mgr)
 {
     section("Two simultaneous instances");
@@ -236,6 +304,12 @@ static void testTwoInstances(CScopeManager& mgr)
     mgr.destroyInstance(2);
 }
 
+/**
+ * @brief  Run two threads against different scope numbers to exercise the
+ *         per-scope serialization without data races.
+ * @param[in] mgr  Loaded manager.
+ * @pre    Plugins are loaded.
+ */
 static void testConcurrency(CScopeManager& mgr)
 {
     section("Two-thread concurrency (different scope numbers)");
@@ -280,6 +354,11 @@ static void testConcurrency(CScopeManager& mgr)
  * model plugins depend on, without a plugin - IDN, binary waveform block
  * round-trip, screenshot block, and the forced-timeout resource.
  *--------------------------------------------------------------------------*/
+/**
+ * @brief  Exercise the MockVisa vi* ABI directly: open, IDN, status queue,
+ *         binary waveform block round-trip, screenshot block, and timeout.
+ * @pre    The MockVisa library is on the load path.
+ */
 static void testMockVisa()
 {
     section("MockVisa VISA-path (IDN, waveform block, screenshot, timeout)");
@@ -398,6 +477,14 @@ static void testMockVisa()
  * Real model plugins (MDO34, RTM3004) end-to-end via MockVisa, including the
  * binary waveform round-trip (preamble + block -> scaled volts).
  *--------------------------------------------------------------------------*/
+/**
+ * @brief  Run one real model end-to-end over MockVisa: connect/IDN, vertical,
+ *         timebase, trigger, acquisition, and a waveform transfer.
+ * @param[in] mgr       Loaded manager.
+ * @param[in] model     Plugin/model name under test.
+ * @param[in] resource  MockVisa resource string to connect to.
+ * @pre    Plugins are loaded and MockVisa is available.
+ */
 static void testRealModel(CScopeManager& mgr, const QString& model, const QString& resource,
                           int analogChannels)
 {
@@ -475,6 +562,11 @@ static void testRealModel(CScopeManager& mgr, const QString& model, const QStrin
     checkOk(mgr.destroyInstance(scope), QStringLiteral("destroyInstance"));
 }
 
+/**
+ * @brief  Invoke testRealModel() for every catalog model.
+ * @param[in] mgr  Loaded manager.
+ * @pre    Plugins are loaded and MockVisa is available.
+ */
 static void testRealModels(CScopeManager& mgr)
 {
     // model, analog channel count (drives the channel-count matrix check)
@@ -499,6 +591,13 @@ static void testRealModels(CScopeManager& mgr)
  * end-to-end through MockVisa: measurements (values checked), cursors, math,
  * display, save/recall, screenshot, AWG (capability-gated), status/keylock.
  *--------------------------------------------------------------------------*/
+/**
+ * @brief  Exercise the optional feature groups (measurements, cursors, math/FFT,
+ *         display, save/recall, digital, AWG, system) for one model.
+ * @param[in] mgr    Loaded manager.
+ * @param[in] model  Model name whose capabilities gate the checks.
+ * @pre    Plugins are loaded and MockVisa is available.
+ */
 static void testFeatureSlicesFor(CScopeManager& mgr, const QString& model)
 {
     section(QStringLiteral("M5 feature slices: %1").arg(model).toLatin1().constData());
@@ -612,6 +711,11 @@ static void testFeatureSlicesFor(CScopeManager& mgr, const QString& model)
     mgr.destroyInstance(sc);
 }
 
+/**
+ * @brief  Run the feature-slice checks across the representative models.
+ * @param[in] mgr  Loaded manager.
+ * @pre    Plugins are loaded and MockVisa is available.
+ */
 static void testFeatureSlices(CScopeManager& mgr)
 {
     testFeatureSlicesFor(mgr, QStringLiteral("MDO34"));     // Tektronix
@@ -625,6 +729,12 @@ static void testFeatureSlices(CScopeManager& mgr)
  * SAME getParameterRange for a model (both keyed off the shared catalog row),
  * and both must produce a non-empty scaled waveform.
  *--------------------------------------------------------------------------*/
+/**
+ * @brief  Verify SimScope and MockVisa agree on getParameterRange and produce
+ *         matching waveform characteristics for the same model.
+ * @param[in] mgr  Loaded manager.
+ * @pre    Plugins are loaded and MockVisa is available.
+ */
 static void testParity(CScopeManager& mgr)
 {
     section("M7 SimScope/MockVisa parity (getParameterRange + waveform)");
@@ -685,6 +795,15 @@ static void testParity(CScopeManager& mgr)
     }
 }
 
+/**
+ * @brief  Load plugins from the given directory (default "plugins"), run every
+ *         test group, and print a pass/fail summary.
+ * @param[in] argc  Argument count.
+ * @param[in] argv  argv[1], if present, is the plugins directory.
+ * @return The number of failed checks (0 on full success).
+ * @pre    A Qt event loop can be constructed; the plugins and MockVisa
+ *         libraries are reachable on the load path.
+ */
 int main(int argc, char** argv)
 {
     QCoreApplication app(argc, argv);

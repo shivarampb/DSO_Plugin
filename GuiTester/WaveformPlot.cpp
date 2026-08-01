@@ -13,6 +13,11 @@
 #include <algorithm>
 #include <cmath>
 
+/**
+ * @brief  Construct the plot widget with a dark background and minimum size.
+ * @param[in] in_pParent  Parent widget, or nullptr for a top-level widget.
+ * @pre    None.
+ */
 WaveformPlot::WaveformPlot(QWidget* in_pParent) : QWidget(in_pParent), m_bHave(false)
 {
     setMinimumSize(420, 260);
@@ -22,6 +27,11 @@ WaveformPlot::WaveformPlot(QWidget* in_pParent) : QWidget(in_pParent), m_bHave(f
     setPalette(pal);
 }
 
+/**
+ * @brief  Adopt a new waveform and repaint.
+ * @param[in] in_sWaveform  Waveform whose time/voltage vectors are copied in.
+ * @pre    None. An empty voltage vector leaves the plot in the no-data state.
+ */
 void WaveformPlot::setWaveform(const S_Scope_Waveform& in_sWaveform)
 {
     m_vecTime = in_sWaveform.m_vecTimeSeconds;
@@ -30,6 +40,10 @@ void WaveformPlot::setWaveform(const S_Scope_Waveform& in_sWaveform)
     update();
 }
 
+/**
+ * @brief  Discard the current waveform and repaint the empty graticule.
+ * @pre    None.
+ */
 void WaveformPlot::clearWaveform()
 {
     m_vecTime.clear();
@@ -38,6 +52,11 @@ void WaveformPlot::clearWaveform()
     update();
 }
 
+/**
+ * @brief  Paint the graticule and, when present, the auto-scaled voltage trace.
+ * @pre    None. With no waveform loaded only the graticule and a hint are drawn;
+ *         otherwise the trace is scaled to the min/max of the sample buffer.
+ */
 void WaveformPlot::paintEvent(QPaintEvent*)
 {
     QPainter g(this);

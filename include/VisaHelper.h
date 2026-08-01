@@ -16,6 +16,13 @@
 #include <QString>
 #include "ScopeTypes.h"
 
+/**
+ * @brief  Build a VISA resource string from this connection configuration.
+ * @return An explicit resource string if one was set; otherwise a string
+ *         synthesized from the protocol-specific fields (ASRL/GPIB/USB/TCPIP).
+ * @pre    None. The relevant fields for @c m_enumProtocol should be populated;
+ *         an unset field yields the protocol's conventional default form.
+ */
 inline QString S_Scope_ConnectionConfig::toVisaResourceString() const
 {
     const QString strPrimary = QString::fromLocal8Bit(m_szResourceString);
