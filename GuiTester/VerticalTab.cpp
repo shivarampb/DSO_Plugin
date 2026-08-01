@@ -17,6 +17,12 @@
 #include <QSpinBox>
 #include <QVBoxLayout>
 
+/**
+ * @brief  Build the vertical tab: per-channel scale, offset, coupling and
+ *         probe-attenuation controls with an Apply button.
+ * @param[in] parent  Parent widget, or nullptr for a top-level widget.
+ * @pre    None.
+ */
 VerticalTab::VerticalTab(QWidget* parent) : QWidget(parent)
 {
     QVBoxLayout* root = new QVBoxLayout(this);
@@ -60,6 +66,11 @@ VerticalTab::VerticalTab(QWidget* parent) : QWidget(parent)
     connect(m_pApplyBtn, SIGNAL(clicked()), this, SLOT(onApply()));
 }
 
+/**
+ * @brief  Populate the scale/offset controls (and scale range) for the current
+ *         channel by reading the connected instrument.
+ * @pre    A scope is connected on TESTER_SCOPE.
+ */
 void VerticalTab::loadFromInstrument()
 {
     CScopeManager& mgr = CScopeManager::instance();
@@ -80,6 +91,10 @@ void VerticalTab::loadFromInstrument()
     }
 }
 
+/**
+ * @brief  Slot: reload the controls when the channel selection changes.
+ * @pre    None (reloads only while the tab is enabled/connected).
+ */
 void VerticalTab::onChannelChanged(int)
 {
     if (isEnabled())
@@ -88,6 +103,11 @@ void VerticalTab::onChannelChanged(int)
     }
 }
 
+/**
+ * @brief  Slot: apply scale, offset, coupling and probe attenuation to the
+ *         selected channel, logging the first error if any.
+ * @pre    A scope is connected on TESTER_SCOPE.
+ */
 void VerticalTab::onApply()
 {
     CScopeManager& mgr = CScopeManager::instance();
@@ -112,6 +132,12 @@ void VerticalTab::onApply()
     emit log(e.isSuccess() ? tr("Vertical applied to CH%1").arg(ch) : e.toString());
 }
 
+/**
+ * @brief  Enable/disable the tab; on connect, clamp the channel range to the
+ *         instrument's channel count and load current values.
+ * @param[in] in_bConnected  true when a scope is connected.
+ * @pre    When true, a scope is connected on TESTER_SCOPE.
+ */
 void VerticalTab::setConnected(bool in_bConnected)
 {
     setEnabled(in_bConnected);

@@ -18,6 +18,12 @@
 #include <QPushButton>
 #include <QVBoxLayout>
 
+/**
+ * @brief  Build the horizontal & trigger tab: timebase control plus edge-trigger
+ *         source/slope/mode/level, with Apply and Force-Trigger buttons.
+ * @param[in] parent  Parent widget, or nullptr for a top-level widget.
+ * @pre    None.
+ */
 HorizontalTriggerTab::HorizontalTriggerTab(QWidget* parent) : QWidget(parent)
 {
     QVBoxLayout* root = new QVBoxLayout(this);
@@ -66,6 +72,11 @@ HorizontalTriggerTab::HorizontalTriggerTab(QWidget* parent) : QWidget(parent)
     connect(m_pForceBtn, SIGNAL(clicked()), this, SLOT(onForce()));
 }
 
+/**
+ * @brief  Slot: apply timebase and trigger source/slope/mode/level, then read
+ *         back and display the trigger state.
+ * @pre    A scope is connected on TESTER_SCOPE.
+ */
 void HorizontalTriggerTab::onApply()
 {
     CScopeManager& mgr = CScopeManager::instance();
@@ -97,12 +108,22 @@ void HorizontalTriggerTab::onApply()
     emit log(e.isSuccess() ? tr("Horizontal/Trigger applied") : e.toString());
 }
 
+/**
+ * @brief  Slot: issue a force-trigger and log the result.
+ * @pre    A scope is connected on TESTER_SCOPE.
+ */
 void HorizontalTriggerTab::onForce()
 {
     ScopeError e = CScopeManager::instance().forceTrigger(TESTER_SCOPE);
     emit log(e.isSuccess() ? tr("Trigger forced") : e.toString());
 }
 
+/**
+ * @brief  Enable/disable the tab; on connect, clamp the timebase control to the
+ *         instrument's supported range.
+ * @param[in] in_bConnected  true when a scope is connected.
+ * @pre    When true, a scope is connected on TESTER_SCOPE.
+ */
 void HorizontalTriggerTab::setConnected(bool in_bConnected)
 {
     setEnabled(in_bConnected);

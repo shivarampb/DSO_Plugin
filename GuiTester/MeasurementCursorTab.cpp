@@ -28,6 +28,12 @@ const Enum_Scope_MeasType MEAS_TYPES[] = {
 const int MEAS_COUNT = 7;
 } // namespace
 
+/**
+ * @brief  Build the measurements & cursors tab: channel/type pickers, a results
+ *         table, and cursor-type controls.
+ * @param[in] parent  Parent widget, or nullptr for a top-level widget.
+ * @pre    None.
+ */
 MeasurementCursorTab::MeasurementCursorTab(QWidget* parent) : QWidget(parent)
 {
     QVBoxLayout* root = new QVBoxLayout(this);
@@ -68,6 +74,11 @@ MeasurementCursorTab::MeasurementCursorTab(QWidget* parent) : QWidget(parent)
     connect(m_pCursorBtn, SIGNAL(clicked()), this, SLOT(onApplyCursor()));
 }
 
+/**
+ * @brief  Slot: read the selected measurement on the selected channel and
+ *         append the value/units to the results table.
+ * @pre    A scope is connected on TESTER_SCOPE.
+ */
 void MeasurementCursorTab::onAddMeasurement()
 {
     const int idx = m_pMeasType->currentIndex();
@@ -87,6 +98,11 @@ void MeasurementCursorTab::onAddMeasurement()
     emit log(e.isSuccess() ? tr("Measured %1").arg(QString::fromLatin1(MEAS_NAMES[idx])) : e.toString());
 }
 
+/**
+ * @brief  Slot: apply the selected cursor type and bind it to the selected
+ *         channel as its source.
+ * @pre    A scope is connected on TESTER_SCOPE.
+ */
 void MeasurementCursorTab::onApplyCursor()
 {
     CScopeManager& mgr = CScopeManager::instance();
@@ -99,6 +115,12 @@ void MeasurementCursorTab::onApplyCursor()
     emit log(e.isSuccess() ? tr("Cursor applied") : e.toString());
 }
 
+/**
+ * @brief  Enable/disable the tab; on connect clamp the channel range, on
+ *         disconnect clear the results table.
+ * @param[in] in_bConnected  true when a scope is connected.
+ * @pre    When true, a scope is connected on TESTER_SCOPE.
+ */
 void MeasurementCursorTab::setConnected(bool in_bConnected)
 {
     setEnabled(in_bConnected);

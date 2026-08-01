@@ -18,7 +18,14 @@
 static const U32BIT TESTER_SCOPE = 1;
 static const U32BIT TESTER_CHANNEL = 1;
 
-// Colour a push button (Connect = green, Disconnect = red, Run = green …).
+/**
+ * @brief  Tint a push button with a background colour (Connect = green,
+ *         Disconnect = red, Run = green, …) while keeping the dark disabled
+ *         style.
+ * @param[in,out] in_pButton  Button to restyle (must be non-null).
+ * @param[in]     in_strColor CSS colour for the enabled background.
+ * @pre    @p in_pButton is a valid button.
+ */
 inline void tintButton(QPushButton* in_pButton, const QString& in_strColor)
 {
     in_pButton->setStyleSheet(QString("QPushButton { background-color: %1; color: white; font-weight: bold;"

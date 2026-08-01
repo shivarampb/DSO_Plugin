@@ -10,6 +10,16 @@
 
 #include <cstdio>
 
+/**
+ * @brief  Minimal end-to-end example: discover plugins, open the virtual
+ *         SimScope, configure it, capture a waveform and read a measurement.
+ * @param[in] argc  Argument count.
+ * @param[in] argv  argv[1], if present, is the plugins directory (default
+ *                  "plugins").
+ * @return 0 on success; 1 if the SimScope plugin could not be instantiated.
+ * @pre    The Scope plugin library and its plugins are reachable on the load
+ *         path. No hardware or VISA backend is required.
+ */
 int main(int argc, char** argv)
 {
     const char* pluginDir = (argc > 1) ? argv[1] : "plugins";

@@ -18,6 +18,12 @@
 #include <QPushButton>
 #include <QVBoxLayout>
 
+/**
+ * @brief  Build the connection tab: model/interface pickers, address field,
+ *         connect/disconnect buttons, and the identity readout.
+ * @param[in] parent  Parent widget, or nullptr for a top-level widget.
+ * @pre    The manager's plugins have been loaded (used to fill the model list).
+ */
 ConnectionTab::ConnectionTab(QWidget* parent) : QWidget(parent)
 {
     QVBoxLayout* root = new QVBoxLayout(this);
@@ -67,11 +73,21 @@ ConnectionTab::ConnectionTab(QWidget* parent) : QWidget(parent)
     connect(m_pInterfaceCombo, SIGNAL(currentIndexChanged(int)), this, SLOT(onInterfaceChanged()));
 }
 
+/**
+ * @brief  Return the model name currently selected in the model combo.
+ * @return The selected model name (empty if the list is empty).
+ * @pre    None.
+ */
 QString ConnectionTab::selectedModel() const
 {
     return m_pModelCombo->currentText();
 }
 
+/**
+ * @brief  Slot: prefill the address field with a representative resource for
+ *         the newly selected interface (LAN/USB/GPIB/Mock/SimScope).
+ * @pre    None.
+ */
 void ConnectionTab::onInterfaceChanged()
 {
     const QString iface = m_pInterfaceCombo->currentText();
@@ -97,6 +113,12 @@ void ConnectionTab::onInterfaceChanged()
     }
 }
 
+/**
+ * @brief  Assemble a connection config from the interface and address fields.
+ * @return A config whose protocol and resource fields reflect the selected
+ *         interface; Mock/SimScope use an explicit resource string.
+ * @pre    None.
+ */
 S_Scope_ConnectionConfig ConnectionTab::buildConfig() const
 {
     S_Scope_ConnectionConfig cfg;
@@ -124,6 +146,12 @@ S_Scope_ConnectionConfig ConnectionTab::buildConfig() const
     return cfg;
 }
 
+/**
+ * @brief  Slot: create the instance if needed, connect, read *IDN?, then lock
+ *         the pickers and emit connected()/log().
+ * @pre    Plugins are loaded. On failure the instance is destroyed and a log
+ *         message is emitted; the tab stays in the disconnected state.
+ */
 void ConnectionTab::onConnect()
 {
     CScopeManager& mgr = CScopeManager::instance();
@@ -166,6 +194,11 @@ void ConnectionTab::onConnect()
     emit connected(model);
 }
 
+/**
+ * @brief  Slot: disconnect and destroy the instance, unlock the pickers, and
+ *         emit disconnected()/log().
+ * @pre    None (safe to call when already disconnected).
+ */
 void ConnectionTab::onDisconnect()
 {
     CScopeManager& mgr = CScopeManager::instance();
@@ -181,6 +214,15 @@ void ConnectionTab::onDisconnect()
     emit disconnected();
 }
 
+/**
+ * @brief  Programmatic connect used by the smoke/screenshot paths: create the
+ *         instance and connect to an explicit resource string.
+ * @param[in] in_strModel     Plugin/model name to instantiate.
+ * @param[in] in_strResource  Explicit VISA resource string to connect to.
+ * @return true on success; false if create or connect fails (instance cleaned
+ *         up on connect failure).
+ * @pre    Plugins are loaded.
+ */
 bool ConnectionTab::connectTo(const QString& in_strModel, const QString& in_strResource)
 {
     CScopeManager& mgr = CScopeManager::instance();

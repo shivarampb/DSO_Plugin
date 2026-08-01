@@ -18,6 +18,12 @@
 #include <QSpinBox>
 #include <QVBoxLayout>
 
+/**
+ * @brief  Build the acquisition tab: mode and average-count controls plus
+ *         Run/Stop/Single buttons and a sample-rate readout.
+ * @param[in] parent  Parent widget, or nullptr for a top-level widget.
+ * @pre    None.
+ */
 AcquisitionTab::AcquisitionTab(QWidget* parent) : QWidget(parent)
 {
     QVBoxLayout* root = new QVBoxLayout(this);
@@ -57,6 +63,10 @@ AcquisitionTab::AcquisitionTab(QWidget* parent) : QWidget(parent)
     connect(m_pSingleBtn, SIGNAL(clicked()), this, SLOT(onSingle()));
 }
 
+/**
+ * @brief  Query and display the current sample rate.
+ * @pre    A scope is connected on TESTER_SCOPE.
+ */
 void AcquisitionTab::refreshReadout()
 {
     FDOUBLE sr = 0.0;
@@ -66,6 +76,11 @@ void AcquisitionTab::refreshReadout()
     }
 }
 
+/**
+ * @brief  Slot: apply the acquisition mode and average count, then refresh the
+ *         sample-rate readout.
+ * @pre    A scope is connected on TESTER_SCOPE.
+ */
 void AcquisitionTab::onApply()
 {
     CScopeManager& mgr = CScopeManager::instance();
@@ -78,17 +93,29 @@ void AcquisitionTab::onApply()
     emit log(e.isSuccess() ? tr("Acquisition applied") : e.toString());
 }
 
+/**
+ * @brief  Slot: start continuous acquisition (Run) and refresh the readout.
+ * @pre    A scope is connected on TESTER_SCOPE.
+ */
 void AcquisitionTab::onRun()
 {
     ScopeError e = CScopeManager::instance().run(TESTER_SCOPE);
     refreshReadout();
     emit log(e.isSuccess() ? tr("Running") : e.toString());
 }
+/**
+ * @brief  Slot: stop acquisition.
+ * @pre    A scope is connected on TESTER_SCOPE.
+ */
 void AcquisitionTab::onStop()
 {
     ScopeError e = CScopeManager::instance().stop(TESTER_SCOPE);
     emit log(e.isSuccess() ? tr("Stopped") : e.toString());
 }
+/**
+ * @brief  Slot: arm a single acquisition and refresh the readout.
+ * @pre    A scope is connected on TESTER_SCOPE.
+ */
 void AcquisitionTab::onSingle()
 {
     ScopeError e = CScopeManager::instance().single(TESTER_SCOPE);
@@ -96,6 +123,12 @@ void AcquisitionTab::onSingle()
     emit log(e.isSuccess() ? tr("Single shot") : e.toString());
 }
 
+/**
+ * @brief  Enable/disable the tab; on connect refresh the readout, on disconnect
+ *         reset it to the placeholder.
+ * @param[in] in_bConnected  true when a scope is connected.
+ * @pre    When true, a scope is connected on TESTER_SCOPE.
+ */
 void AcquisitionTab::setConnected(bool in_bConnected)
 {
     setEnabled(in_bConnected);
