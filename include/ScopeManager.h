@@ -1,24 +1,32 @@
-/*============================================================================
- *  ScopeManager.h
+/**
+ * @file    ScopeManager.h
+ * @brief   CScopeManager — the framework front end (singleton facade).
+ * @details Mirrors CELoadManager: a QObject singleton that discovers plugins
+ *          with QPluginLoader, maps a 1-based scope number to a loaded plugin
+ *          instance, and forwards every operation to the plugin that owns that
+ *          scope number. All public operations are mutex-guarded.
  *
- *  CScopeManager - the framework front end. Mirrors CELoadManager: a QObject
- *  singleton that discovers plugins with QPluginLoader, maps a logical scope
- *  number to a loaded plugin instance, and forwards every operation to the
- *  plugin that owns that scope number.
+ *          @b Typical @b sequence (each step is a prerequisite of the next):
+ *          @code
+ *          CScopeManager& mgr = CScopeManager::instance();
+ *          mgr.loadPlugins("plugins");                 // discover model DLLs
+ *          mgr.createInstance(1, "MDO34");             // bind scope 1 to a model
+ *          S_Scope_ConnectionConfig cfg;
+ *          cfg.setResourceString("USB0::0x0699::0x0522::C0::INSTR");
+ *          mgr.connect(1, cfg);                        // open the instrument
+ *          mgr.enableChannel(1, 1, true);
+ *          mgr.setVerticalScale(1, 1, 0.5);
+ *          mgr.single(1);
+ *          S_Scope_Waveform wfm; mgr.readWaveform(1, 1, wfm);
+ *          @endcode
  *
- *  Usage:
- *      CScopeManager& mgr = CScopeManager::instance();
- *      mgr.loadPlugins("plugins");
- *      mgr.createInstance(1, "MDO34");
- *      S_Scope_ConnectionConfig cfg; cfg.setResourceString("USB0::0x0699::0x0522::C0::INSTR");
- *      mgr.connect(1, cfg);
- *      mgr.enableChannel(1, 1, true);
- *      mgr.setVerticalScale(1, 1, 0.5);
- *      mgr.single(1);
- *      S_Scope_Waveform wfm; mgr.readWaveform(1, 1, wfm);
- *
- *  \author  Scope framework
- *==========================================================================*/
+ * @author  Scope framework
+ * @date    2026
+ * @note    MISRA C++:2023 — the many per-operation members are thin,
+ *          mutex-guarded forwarders (see ScopeManager.cpp / the SCP_FWD macro);
+ *          their shared precondition is a bound instance (createInstance) and,
+ *          for I/O, a successful connect().
+ */
 #ifndef SCOPEMANAGER_H
 #define SCOPEMANAGER_H
 

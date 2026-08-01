@@ -1,17 +1,21 @@
-/*============================================================================
- *  ScopeTypes.h
+/**
+ * @file    ScopeTypes.h
+ * @brief   Shared value types (enums, POD structs) for the Scope framework.
+ * @details Mirrors the ELoad framework's ELoadTypes.h, adapted for
+ *          oscilloscopes. Included by the core, every model plugin and the
+ *          application. Defines the primitive house typedefs, the
+ *          SCOPECORE_EXPORT decoration, the domain enumerations and the value
+ *          structs (connection config, plugin info, capabilities, parameter
+ *          range, waveform preamble/data, measurement result).
  *
- *  Shared value types for the Scope plugin framework. Mirrors the structure of
- *  the ELoad framework's ELoadTypes.h (itself modeled on PowerSupplyTypes.h),
- *  adapted for oscilloscopes. Included by the core, every model plugin and the
- *  application.
- *
- *  Naming convention: every Scope framework structure is named  S_Scope_<Name>
- *  and every enumeration  Enum_Scope_<Name>  so it never collides with the
- *  sibling ELoad / PowerSupply frameworks when used from the same application.
- *
- *  \author  Scope framework
- *==========================================================================*/
+ * @author  Scope framework
+ * @date    2026
+ * @note    Naming — every structure is S_Scope_<Name> and every enumeration
+ *          Enum_Scope_<Name> so the framework never collides with the sibling
+ *          ELoad / PowerSupply frameworks in the same application.
+ * @note    MISRA C++:2023 — fixed-width house typedefs only (no `long`); scoped
+ *          enums; POD structs fully initialise their members in the constructor.
+ */
 #ifndef SCOPETYPES_H
 #define SCOPETYPES_H
 

@@ -1,22 +1,32 @@
-/*============================================================================
- *  IScopePlugin.h
+/**
+ * @file    IScopePlugin.h
+ * @brief   Abstract Qt plugin interface for an oscilloscope model.
+ * @details Mirrors the ELoad framework's CIELoadPlugin: a Qt plugin interface
+ *          loaded with QPluginLoader and resolved with qobject_cast. Each model
+ *          plugin is a QObject deriving from CIScopePlugin and declaring
+ *          @code Q_PLUGIN_METADATA(IID ScopePlugin_iid) @endcode and
+ *          @code Q_INTERFACES(CIScopePlugin) @endcode.
  *
- *  Abstract plugin interface for an oscilloscope model. Mirrors the ELoad
- *  framework's CIELoadPlugin: a Qt plugin interface loaded with QPluginLoader
- *  and resolved with qobject_cast. Each model plugin is a QObject deriving
- *  from CIScopePlugin and declaring:
- *      Q_PLUGIN_METADATA(IID ScopePlugin_iid)
- *      Q_INTERFACES(CIScopePlugin)
+ *          Every operation takes the 1-based scope number and, where it applies,
+ *          a 1-based channel (channel is first-class — scopes are inherently
+ *          multi-channel).
  *
- *  Every operation takes the logical scope number (1-based) and, where it
- *  applies, a 1-based channel (scopes are inherently multi-channel, so channel
- *  is first-class here). Non-mandatory operations default to NOT_SUPPORTED, so
- *  a plugin overrides only what its model provides (e.g. only MSO models
- *  override the digital-channel group; only models with a built-in generator
- *  override the AWG group).
+ *          @b Prerequisites (apply to every operation below): getPluginInfo /
+ *          getCapabilities may be called any time; connect() requires the plugin
+ *          to have been instantiated by the manager; every other operation
+ *          requires a successful connect() first, and returns NOT_CONNECTED
+ *          otherwise. Only getPluginInfo/getCapabilities/connect/disconnect/
+ *          isConnected/reset are mandatory (pure virtual); every other operation
+ *          defaults to NOT_SUPPORTED via SCP_NS(), so a plugin overrides only
+ *          what its model provides (e.g. only MSO models override the
+ *          digital-channel group; only models with a generator override AWG).
  *
- *  \author  Scope framework
- *==========================================================================*/
+ * @author  Scope framework
+ * @date    2026
+ * @note    MISRA C++:2023 — the default (not-overridden) bodies deliberately
+ *          ignore their named parameters; -Wunused-parameter is suppressed for
+ *          this interface only, between the diagnostic push/pop below.
+ */
 #ifndef ISCOPEPLUGIN_H
 #define ISCOPEPLUGIN_H
 

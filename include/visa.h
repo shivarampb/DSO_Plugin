@@ -1,20 +1,22 @@
-/*============================================================================
- *  visa.h  (project-local, minimal)
+/**
+ * @file    visa.h
+ * @brief   Minimal, ABI-correct subset of the VPP-4.3.2 VISA C API.
+ * @details Enough for the Scope model plugins to talk SCPI to instruments
+ *          (including counted/binary block reads for waveform & screenshot
+ *          payloads). Provided so the plugins can @code #include <visa.h> @endcode
+ *          and link @c -lvisa on any platform:
+ *          - On Windows with NI-VISA / Keysight IO Libraries, point the plugin's
+ *            INCLUDEPATH at the vendor include dir instead of this file and link
+ *            @c -lvisa64; this header is ABI-compatible with the real one.
+ *          - For hardware-free development/CI, link the bundled MockVisa (built
+ *            as @c libvisa) which implements exactly these symbols.
  *
- *  A minimal, ABI-correct subset of the VPP-4.3.2 VISA C API - enough for the
- *  Scope model plugins to talk SCPI to instruments (including counted/binary
- *  block reads for waveform & screenshot payloads). Provided so the plugins
- *  can "#include <visa.h>" and link -lvisa on any platform:
- *    - on Windows with NI-VISA / Keysight IO Libraries, point the plugin's
- *      INCLUDEPATH at the vendor include dir instead of this file and link
- *      -lvisa64; this header is ABI-compatible with the real one.
- *    - for hardware-free development/CI, link the bundled MockVisa (built as
- *      libvisa) which implements exactly these symbols.
- *
- *  ABI note: ViStatus is signed 32-bit; ViSession/ViObject are unsigned
- *  32-bit even on 64-bit platforms; ViAttrState is register-wide (64-bit on
- *  LP64/LLP64). These match the official visatype.h.
- *==========================================================================*/
+ * @note    ABI — ViStatus is signed 32-bit; ViSession/ViObject are unsigned
+ *          32-bit even on 64-bit platforms; ViAttrState is register-wide (64-bit
+ *          on LP64/LLP64). These match the official visatype.h.
+ * @note    MISRA C++:2023 — this is a C ABI header (extern "C"); it declares
+ *          only types and function prototypes.
+ */
 #ifndef __VISA_H__
 #define __VISA_H__
 

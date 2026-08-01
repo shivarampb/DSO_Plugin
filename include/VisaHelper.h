@@ -1,12 +1,15 @@
-/*============================================================================
- *  VisaHelper.h
+/**
+ * @file    VisaHelper.h
+ * @brief   Inline S_Scope_ConnectionConfig::toVisaResourceString() builder.
+ * @details Builds a VISA resource string from the structured connection
+ *          parameters (protocol + address fields), or returns an explicit
+ *          resource string when one was set. Mirrors the ELoad VisaHelper.h.
  *
- *  Inline implementation of S_Scope_ConnectionConfig::toVisaResourceString(),
- *  which builds a VISA resource string from the connection parameters. Mirrors
- *  the ELoad framework's VisaHelper.h.
- *
- *  \author  Scope framework
- *==========================================================================*/
+ * @author  Scope framework
+ * @date    2026
+ * @note    MISRA C++:2023 — the switch over the protocol has a default; Allman
+ *          braces with a leading sequence comment.
+ */
 #ifndef VISAHELPER_H
 #define VISAHELPER_H
 
