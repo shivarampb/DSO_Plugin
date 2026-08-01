@@ -74,6 +74,18 @@ The real plugins route VISA to the bundled **MockVisa** (`libvisa`), and
 `SimScope` needs no VISA at all, so the whole suite runs with no instrument
 attached. On a real bench, replace `libvisa` with the vendor NI-VISA.
 
+## API documentation
+
+Every public type and function carries Doxygen comments (MISRA C++:2023 style;
+see `docs/Coding_Standard.md`). Generate the browsable API reference with:
+
+```sh
+doxygen Doxyfile        # writes docs/api/html/index.html (git-ignored)
+```
+
+CI regenerates the docs and fails on any Doxygen warning, so the comments stay
+complete and well-formed.
+
 ## Reference manuals
 
 Per-model programming/interface manuals and datasheets belong under
