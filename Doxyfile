@@ -1,0 +1,84 @@
+# Doxygen configuration for the ScopeCore / DSO_Plugin framework.
+#
+# Generate the API documentation from the in-source Doxygen comments:
+#     doxygen Doxyfile
+# Output is written to docs/api/html/index.html (git-ignored).
+
+#---------------------------------------------------------------------------
+# Project
+#---------------------------------------------------------------------------
+PROJECT_NAME           = "ScopeCore (DSO Plugin Framework)"
+PROJECT_BRIEF          = "Plugin-based oscilloscope control library"
+PROJECT_NUMBER         = 1.0.0
+OUTPUT_DIRECTORY       = docs/api
+CREATE_SUBDIRS         = NO
+OPTIMIZE_OUTPUT_FOR_C  = NO
+TAB_SIZE               = 4
+QUIET                  = YES
+
+#---------------------------------------------------------------------------
+# Input
+#---------------------------------------------------------------------------
+INPUT                  = include \
+                         Common \
+                         ScopeCore \
+                         MockVisa \
+                         PluginSimScope \
+                         PluginMDO34 \
+                         PluginRTM3004 \
+                         PluginDSOX2012A \
+                         GuiTester \
+                         AutoTest \
+                         examples \
+                         docs/Coding_Standard.md
+FILE_PATTERNS          = *.h *.cpp *.md
+RECURSIVE              = YES
+USE_MDFILE_AS_MAINPAGE = docs/Coding_Standard.md
+
+#---------------------------------------------------------------------------
+# Extraction
+#---------------------------------------------------------------------------
+EXTRACT_ALL            = NO
+EXTRACT_STATIC         = YES
+EXTRACT_PRIVATE        = NO
+HIDE_UNDOC_MEMBERS     = NO
+JAVADOC_AUTOBRIEF      = NO
+SORT_MEMBER_DOCS       = NO
+
+#---------------------------------------------------------------------------
+# Warnings (keep the doc comments honest)
+#---------------------------------------------------------------------------
+WARNINGS               = YES
+WARN_IF_UNDOCUMENTED   = NO
+WARN_IF_DOC_ERROR      = YES
+WARN_NO_PARAMDOC       = NO
+
+#---------------------------------------------------------------------------
+# Preprocessing (expand the Qt / export macros so signatures parse)
+#---------------------------------------------------------------------------
+MACRO_EXPANSION        = YES
+EXPAND_ONLY_PREDEF     = YES
+PREDEFINED             = SCOPECORE_EXPORT= \
+                         Q_OBJECT= \
+                         "Q_DECLARE_INTERFACE(a,b)=" \
+                         "Q_DECLARE_FLAGS(a,b)=" \
+                         "Q_PLUGIN_METADATA(x)="
+
+#---------------------------------------------------------------------------
+# Output formats
+#---------------------------------------------------------------------------
+GENERATE_HTML          = YES
+GENERATE_LATEX         = NO
+GENERATE_TREEVIEW      = YES
+HTML_OUTPUT            = html
+
+#---------------------------------------------------------------------------
+# Diagrams: keep generation self-contained (no Graphviz/dot dependency)
+#---------------------------------------------------------------------------
+HAVE_DOT               = NO
+CLASS_GRAPH            = NO
+COLLABORATION_GRAPH    = NO
+INCLUDE_GRAPH          = NO
+INCLUDED_BY_GRAPH      = NO
+GRAPHICAL_HIERARCHY    = NO
+DIRECTORY_GRAPH        = NO

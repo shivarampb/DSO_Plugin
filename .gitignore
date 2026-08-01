@@ -1,0 +1,25 @@
+# Build output (shadow build)
+build/
+build-pkg/
+deliverables/
+lib/
+plugins/
+bin/
+
+# qmake / make artifacts
+*.o
+*.so
+*.so.*
+moc_*.cpp
+qrc_*.cpp
+ui_*.h
+Makefile
+.qmake.stash
+*.pro.user
+
+# editor
+*.autosave
+*~
+
+# Generated Doxygen API docs
+docs/api/

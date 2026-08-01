@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  push:
+    branches: [ "**" ]
+  pull_request:
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Qt 5
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qtbase5-dev qt5-qmake qtbase5-dev-tools build-essential
+
+      - name: Clean shadow build (zero warnings expected)
+        run: |
+          mkdir build && cd build
+          qmake ../Scope.pro
+          make -j"$(nproc)"
+
+      - name: AutoTest (exit code gates the build)
+        working-directory: build
+        run: LD_LIBRARY_PATH=lib bin/AutoTest "$(pwd)/plugins"
+
+      - name: GuiTester --smoke (offscreen)
+        working-directory: build
+        run: QT_QPA_PLATFORM=offscreen LD_LIBRARY_PATH=lib bin/GuiTester --smoke "$(pwd)/plugins"
+
+      - name: Package deliverables + leak guard
+        run: scripts/package_deliverables.sh release
+
+      - name: Build example against deliverables only
+        run: |
+          cd examples/BasicUsage
+          mkdir -p ex-build && cd ex-build
+          qmake "INCLUDEPATH+=$GITHUB_WORKSPACE/deliverables/include" \
+                "LIBS+=-L$GITHUB_WORKSPACE/deliverables/lib -lScopeCore" \
+                DESTDIR=. ../BasicUsage.pro
+          make -j"$(nproc)"
+          LD_LIBRARY_PATH=$GITHUB_WORKSPACE/deliverables/lib \
+            ./BasicUsage "$GITHUB_WORKSPACE/deliverables/plugins"
+
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Doxygen
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y doxygen
+
+      - name: Generate API docs (any Doxygen warning fails the build)
+        run: |
+          ( cat Doxyfile; echo "WARN_AS_ERROR=YES" ) | doxygen -
+
+      - name: Upload API docs
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-docs
+          path: docs/api/html
